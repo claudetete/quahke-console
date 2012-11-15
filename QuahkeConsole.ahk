@@ -106,7 +106,7 @@ IniRead, TerminalSlideTime,  QuahkeConsole.ini, Display, TerminalSlideTime, 250
 IniRead, TerminalSlideTau,   QuahkeConsole.ini, Display, TerminalSlideTau, 70
 ;;
 ;; shell in terminal Cygwin/rxvt
-IniRead, TerminalShell,   QuahkeConsole.ini, Misc, TerminalShell, bassh
+IniRead, TerminalShell,   QuahkeConsole.ini, Misc, TerminalShell, bash
 ;; history size in terminal Cygwin/rxvt
 IniRead, TerminalHistory, QuahkeConsole.ini, Misc, TerminalHistory, 5000
 ;; path of Cygwin (to run rxvt)

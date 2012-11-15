@@ -26,40 +26,40 @@
 
 === Section Position ===
 || *Name* || *About* || *Default* ||
-|| PosX || Position in X of the console window, left of screen = 0 || -5 ||
-|| PosY || Position in Y of the console window, top of screen = 0 || -25 ||
-|| OffsetX || Width of the right decoration of the console window || 2 ||
-|| OffsetY || Height of the bottom decoration of the console window || 6 ||
+|| PosX || Position in X of the console window, left of screen = 0 || _-5_ ||
+|| PosY || Position in Y of the console window, top of screen = 0 || _-25_ ||
+|| OffsetX || Width of the right decoration of the console window || _2_ ||
+|| OffsetY || Height of the bottom decoration of the console window || _6_ ||
 
 === Section Size ===
-|| *Name* || *About* ||
-|| SizePercentX || Width of the console in percent of screen || 100 ||
-|| SizePercentY || Height of the console in percent of screen || 30 ||
+|| *Name* || *About* || *Default* ||
+|| SizePercentX || Width of the console in percent of screen || _100_ ||
+|| SizePercentY || Height of the console in percent of screen || _30_ ||
 
 === Section Font ===
-|| *Name* || *About* ||
-|| TerminalFont || Font to be used in the console (only rxvt || Terminal-8 ||
-|| CharacterSizeX || Font width used in the console || 8 ||
-|| CharacterSizeY || Font height used in the console || 12 ||
+|| *Name* || *About* || *Default* ||
+|| TerminalFont || Font to be used in the console (only rxvt || _Terminal-8_ ||
+|| CharacterSizeX || Font width used in the console || _8_ ||
+|| CharacterSizeY || Font height used in the console || _12_ ||
 
 === Section Terminal ===
-|| *Name* || *About* ||
-|| *TerminalType* || Type of terminal you want, only *rxvt* or *cmd* || cmd ||
-|| TerminalTitle || Title of the console window || QuahkeConsole ||
+|| *Name* || *About* || *Default* ||
+|| *TerminalType* || Type of terminal you want, only *rxvt* or *cmd* || _cmd_ ||
+|| TerminalTitle || Title of the console window || _QuahkeConsole_ ||
 
 === Section Display ===
-|| *Name* || *About* ||
-|| TerminalAlpha || Value of the transparency of the console window in percent || 80 ||
-|| TerminalForeground || Color of the foreground of the terminal (only rxvt || white ||
-|| TerminalBackground || Color of the background of the terminal (only rxvt || black ||
-|| TerminalSlideTime || Time to show or hide the console window || 250 ||
-|| TerminalSlideTau || Constant time to configure the animation (first order filter || 70 ||
+|| *Name* || *About* || *Default* ||
+|| TerminalAlpha || Value of the transparency of the console window in percent || _80_ ||
+|| TerminalForeground || Color of the foreground of the terminal (only rxvt || _white_ ||
+|| TerminalBackground || Color of the background of the terminal (only rxvt || _black_ ||
+|| TerminalSlideTime || Time to show or hide the console window || _250_ ||
+|| TerminalSlideTau || Constant time to configure the animation (first order filter || _70_ ||
 
 === Section Misc ===
-|| *Name* || *About* ||
-|| TerminalShell || Shell you want used in the terminal window (only rxvt || bash ||
-|| TerminalHistory || Number of lines to be keep in memory (only rxvt || 5000 ||
-|| CygwinPath || Path of the cygwin installation (only rxvt || C:\cygwin ||
+|| *Name* || *About* || *Default* ||
+|| TerminalShell || Shell you want used in the terminal window (only rxvt || _bash_ ||
+|| TerminalHistory || Number of lines to be keep in memory (only rxvt || _5000_ ||
+|| CygwinPath || Path of the cygwin installation (only rxvt || _C:\cygwin_ ||
 
 = rxvt =
 Example of settings for rxvt:

@@ -32,7 +32,7 @@
 
 ;;; Change Log:
 ;; 2012-11-16 (0.9)
-;;     fix behaviour in Win7 with cmd + add robustness
+;;     fix behaviour in Win7 with cmd + add robustness + some fix for rxvt
 ;; 2012-11-15 (0.8)
 ;;     clean up + add smooth open/close + options in ini file
 ;; 2011-07-14 (0.7)
@@ -202,12 +202,8 @@ ShowHide:
   SysGet, ScreenSizeX, 61
   SysGet, ScreenSizeY, 62
 
-  ;; when the console has not (yet) been launched by this script
-  If TerminalHWND = -1
-  {
-    ;; get the console window id (-1 if nothing found)
-    TerminalHWND := TerminalWindowExist()
-  }
+  ;; get the console window id (-1 if nothing found)
+  TerminalHWND := TerminalWindowExist()
 
   ;; if a console has been launched
   If TerminalHWND != -1
@@ -215,19 +211,8 @@ ShowHide:
     ;; if the console window is active
     IfWinActive ahk_id %TerminalHWND%
     {
-      ;; active the previous windows first to not wait end of animation
-      ;; if there was a previous window
-      IfWinExist ahk_id %PrevActive%
-      {
-        ;; focus on the previous window
-        WinActivate ahk_id %PrevActive%
-      }
-      else
-      {
-        ;; focus is not on console
-        WinActivate ahk_class Shell_TrayWnd
-      }
-
+      ;; to switch to the windows just under the console window
+      SendInput !{Esc}
       ;; hide the window of console
       WindowSlideUp(TerminalHWND)
     }
@@ -244,7 +229,6 @@ ShowHide:
         ;; the window decoration
         MaskY := H - OffsetY
       }
-
       ;; get the title of the current window
       PrevActive := WinActive()
       ;;
@@ -264,25 +248,24 @@ ShowHide:
     if TerminalType = cmd
     {
       ;; launch cmd
-      Run "%A_WinDir%\system32\cmd.exe" /K "title %TerminalTitle% & mode con:cols=%NbCharacterX% lines=%NbCharacterY%", , Hide
+      Run "%A_WinDir%\system32\cmd.exe" /K "title %TerminalTitle% & mode con:cols=%NbCharacterX% lines=%NbCharacterY%", , Hide, WinPID
+    }
+    else if TerminalType = rxvt
+    {
+      ;; launch rxvt
+      Run "%CygwinPath%\bin\rxvt.exe" -display :0 -sl %TerminalHistory% -fg %TerminalForeground% -bg %TerminalBackground% -fn %TerminalFont% -fb %TerminalFont% -fm %TerminalFont% -tn rxvt -title %TerminalTitle% -g %NbCharacterX%x%NbCharacterY% -e /bin/%TerminalShell% --login -i, , Hide, WinPID
+      ;; rxvt is long to be launched so wait a little
+      Sleep, 150
     }
     else
     {
-      if TerminalType = rxvt
-      {
-        ;; launch rxvt
-        Run "%CygwinPath%\bin\rxvt.exe" -display :0 -sl %TerminalHistory% -fg %TerminalForeground% -bg %TerminalBackground% -fn %TerminalFont% -fb %TerminalFont% -fm %TerminalFont% -tn rxvt -title %TerminalTitle% -g %NbCharacterX%x%NbCharacterY% -e /bin/%TerminalShell% --login -i, , Hide
-      }
-      else
-      {
-        ;; show an error dialog box
-        MsgBox, 0x80, QuahkeConsole: error, Error: wrong TerminalType, it must be "cmd" or "rxvt"
-        Exit, -2
-      }
+      ;; show an error dialog box
+      MsgBox, 0x80, QuahkeConsole: error, Error: wrong TerminalType, it must be "cmd" or "rxvt"
+      Exit, -2
     }
 
-    ;; wait that the terminal has been launch
-    WinWait, %TerminalTitle%
+    ;; wait instance of console window (FIXME PID for rxvt it is not the same)
+    WinWait, ahk_pid %WinPID%
     ;;
     ;; get the unique id of the console window
     TerminalHWND := TerminalWindowExist()
@@ -320,6 +303,8 @@ WindowSlideUp(WindowHWND)
   ;; enable animation only when the timer is not null (or negative)
   if TerminalSlideTime > 0
   {
+    ;; to be sure that the console window is at the right place
+    WinMove, ahk_id %WindowHWND%, , PosX, PosY
     ;; move windows immediately
     SetWinDelay, -1
     ;; get pos and window size
@@ -451,6 +436,7 @@ WindowSlideDown(WindowHWND)
     }
   }
 
+  ;; to be sure that the console window is at the right place
   WinMove, ahk_id %WindowHWND%, , PosX, PosY
 }
 Return
@@ -471,9 +457,11 @@ TerminalWindowExist()
     WinId := id%A_Index%
     ;; get the title
     WinGetTitle, WinTitle, ahk_id %WinId%
-    ;; when the title match the terminal title
-    tmpMatched = "i).*".TerminalTitle."$"
+    ;; set regex
+    tmpMatched = "i).*%TerminalTitle%$"
+    ;; match the title
     WinTitleMatched := RegExMatch(WinTitle, tmpMatched)
+    ;; when the title match the terminal title
     If WinTitleMatched != 0
     {
       ;; get process name of this window

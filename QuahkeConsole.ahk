@@ -18,7 +18,7 @@
 ;;
 
 ;; Author: Claude Tete  <claude.tete@gmail.com>
-;; Version: 0.8
+;; Version: 0.9
 ;; Created: February 2011
 ;; Last-Updated: November 2012
 
@@ -31,6 +31,8 @@
 ;;  Default settings are for cmd with default font (8x12) on Windows XP
 
 ;;; Change Log:
+;; 2012-11-16 (0.9)
+;;     fix behaviour in Win7 with cmd + add robustness
 ;; 2012-11-15 (0.8)
 ;;     clean up + add smooth open/close + options in ini file
 ;; 2011-07-14 (0.7)
@@ -113,10 +115,13 @@ IniRead, TerminalHistory, QuahkeConsole.ini, Misc, TerminalHistory, 5000
 IniRead, CygwinPath,      QuahkeConsole.ini, Misc, CygwinPath, C:\cygwin
 ;;
 ;; version number
-SoftwareVersion := "0.8"
+SoftwareVersion := "0.9"
 ;;
 ;; Precision of pixel move for animation of the window
 TimerMovePrecision := 20
+;;
+;; Unique ID of the console window
+TerminalHWND := -1
 
 ;
 ;;
@@ -190,22 +195,32 @@ ShowHide:
   ;; enable detection of hidden window
   DetectHiddenWindows, on
   ;;
+  ;; set match window title anywhere in the title
+  SetTitleMatchMode, 3
+  ;;
   ;; get the size of the current monitor (without taskbar)
   SysGet, ScreenSizeX, 61
   SysGet, ScreenSizeY, 62
-  ;;
-  ;; if console has been launched
-  IfWinExist %TerminalTitle%
+
+  ;; when the console has not (yet) been launched by this script
+  If TerminalHWND = -1
+  {
+    ;; get the console window id (-1 if nothing found)
+    TerminalHWND := TerminalWindowExist()
+  }
+
+  ;; if a console has been launched
+  If TerminalHWND != -1
   {
     ;; if the console window is active
-    IfWinActive %TerminalTitle%
+    IfWinActive ahk_id %TerminalHWND%
     {
       ;; active the previous windows first to not wait end of animation
       ;; if there was a previous window
-      IfWinExist %PrevActive%
+      IfWinExist ahk_id %PrevActive%
       {
         ;; focus on the previous window
-        WinActivate %PrevActive%
+        WinActivate ahk_id %PrevActive%
       }
       else
       {
@@ -214,25 +229,33 @@ ShowHide:
       }
 
       ;; hide the window of console
-      WindowSlideUp(TerminalTitle)
+      WindowSlideUp(TerminalHWND)
     }
     else
     {
+      ;; when no window was save before the console window was not launched by
+      ;; this instance of script
+      If !PrevActive
+      {
+        ;; get size of terminal window
+        WinGetPos, , , W, H, ahk_id %TerminalHWND%
+        ;; set size of mask
+        MaskX := W - OffsetX
+        ;; the window decoration
+        MaskY := H - OffsetY
+      }
+
       ;; get the title of the current window
-      WinGetActiveTitle, CurrentWindowTitle
-      ;; keep the title of the previous window
-      PrevActive = %CurrentWindowTitle%
+      PrevActive := WinActive()
       ;;
       ;; Display the hidden console window
-      WindowSlideDown(TerminalTitle)
+      WindowSlideDown(TerminalHWND)
     }
   }
   else
   {
-    ;; get the title of the current window
-    WinGetActiveTitle, CurrentWindowTitle
-    ;; keep the title of the previous window
-    PrevActive = %CurrentWindowTitle%
+    ;; get the id of the current window
+    PrevActive := WinActive()
     ;;
     ;; number of line and column in chosen font
     NbCharacterX := Round((SizePercentX * (ScreenSizeX - OffsetX + PosX)) / (100 * CharacterSizeX), 0)
@@ -240,8 +263,8 @@ ShowHide:
 
     if TerminalType = cmd
     {
-       ;; launch cmd
-       Run "%A_WinDir%\system32\cmd.exe" /K "title %TerminalTitle% & mode con:cols=%NbCharacterX% lines=%NbCharacterY%", , Hide
+      ;; launch cmd
+      Run "%A_WinDir%\system32\cmd.exe" /K "title %TerminalTitle% & mode con:cols=%NbCharacterX% lines=%NbCharacterY%", , Hide
     }
     else
     {
@@ -252,16 +275,20 @@ ShowHide:
       }
       else
       {
-        ;; show an error  dialog box
+        ;; show an error dialog box
         MsgBox, 0x80, QuahkeConsole: error, Error: wrong TerminalType, it must be "cmd" or "rxvt"
+        Exit, -2
       }
     }
 
     ;; wait that the terminal has been launch
-    WinWait %TerminalTitle%
+    WinWait, %TerminalTitle%
+    ;;
+    ;; get the unique id of the console window
+    TerminalHWND := TerminalWindowExist()
     ;;
     ;; get size of terminal window
-    WinGetPos, , , W, H, %TerminalTitle%
+    WinGetPos, , , W, H, ahk_id %TerminalHWND%
     ;; set size of mask
     MaskX := W - OffsetX
     ;; the window decoration
@@ -270,13 +297,13 @@ ShowHide:
     ;; make the window of the terminal with alpha of 200
     ;; (full transparent = 0, full opaque = 255)
     Alpha := (TerminalAlpha * 255) / 100
-    WinSet, Transparent, %Alpha%, %TerminalTitle%
+    WinSet, Transparent, %Alpha%, ahk_id %TerminalHWND%
     ;;
     ;; set the window to be always in front of other windows
-    Winset, AlwaysOnTop, On, %TerminalTitle%
+    Winset, AlwaysOnTop, On, ahk_id %TerminalHWND%
 
     ;; show the window by the top
-    WindowSlideDown(TerminalTitle)
+    WindowSlideDown(TerminalHWND)
   }
 
   ;; disable detection of hidden window
@@ -286,7 +313,7 @@ Return
 ;
 ;;
 ;;; Slide a Windows outside the screen by the top (to hide it)
-WindowSlideUp(Window)
+WindowSlideUp(WindowHWND)
 {
   global TerminalSlideTime, PosX, PosY, OffsetY, TimerMovePrecision, TerminalSlideTau
 
@@ -296,7 +323,7 @@ WindowSlideUp(Window)
     ;; move windows immediately
     SetWinDelay, -1
     ;; get pos and window size
-    WinGetPos, WinPosX, WinPosY, W, H, %Window%
+    WinGetPos, WinPosX, WinPosY, W, H, ahk_id %WindowHWND%
     ;; Position of window out of screen to hide it
     WinHeight := H + PosY - OffsetY
     PosToStop := WinPosY - WinHeight
@@ -336,7 +363,7 @@ WindowSlideUp(Window)
         WinPosY := PosToStop
       }
       ;; positioning the window
-      WinMove, %Window%, , %PosX%, %WinPosY%
+      WinMove, ahk_id %WindowHWND%, , %PosX%, %WinPosY%
       ;; wait TimerMovePrecision ms (to create the animation)
       Sleep, %TimerMovePrecision%
       ;; increment time
@@ -344,14 +371,14 @@ WindowSlideUp(Window)
     }
   }
  ;; hide window from users
- WinHide %Window%
+ WinHide, ahk_id %WindowHWND%
 }
 Return
 
 ;
 ;;
 ;;; Slide a Windows inside the screen by the top (to show it)
-WindowSlideDown(Window)
+WindowSlideDown(WindowHWND)
 {
   global TerminalSlideTime, PosX, PosY, OffsetY, TimerMovePrecision, MaskX, MaskY, TerminalSlideTau
 
@@ -359,23 +386,23 @@ WindowSlideDown(Window)
   SetWinDelay, -1
 
   ;; get window size
-  WinGetPos, , , W, H, %Window%
+  WinGetPos, , , W, H, ahk_id %WindowHWND%
 
   ;; place the window
-  WinMove, %Window%, , PosX, ((H + PosY + OffsetY) * -1)
-  WinSet, Region, 0-0 w%MaskX% h%MaskY%, %Window%
+  WinMove, ahk_id %WindowHWND%, , PosX, ((H + PosY + OffsetY) * -1)
+  WinSet, Region, 0-0 w%MaskX% h%MaskY%, ahk_id %WindowHWND%
 
   ;; Display the hidden console2 window
-  WinShow %TerminalTitle%
+  WinShow, ahk_id %WindowHWND%
 
   ;; make active the console2 window
-  WinActivate %TerminalTitle%
+  WinActivate, ahk_id %WindowHWND%
 
   ;; enable animation only when the timer is not null (or negative)
   if TerminalSlideTime > 0
   {
     ;; get pos and window size
-    WinGetPos, WinPosX, WinPosY, W, H, %Window%
+    WinGetPos, WinPosX, WinPosY, W, H, ahk_id %WindowHWND%
     ;; height of showed window
     WinHeight := H + PosY - OffsetY
     ;; Position of window out of screen to showit
@@ -416,7 +443,7 @@ WindowSlideDown(Window)
         WinPosY := PosToStop
       }
       ;; positioning the window
-      WinMove, %Window%, , %PosX%, %WinPosY%
+      WinMove, ahk_id %WindowHWND%, , %PosX%, %WinPosY%
       ;; wait TimerMovePrecision ms (to create the animation)
       Sleep, %TimerMovePrecision%
       ;; increment time
@@ -424,7 +451,44 @@ WindowSlideDown(Window)
     }
   }
 
-  WinMove, %Window%, , PosX, PosY
+  WinMove, ahk_id %WindowHWND%, , PosX, PosY
+}
+Return
+
+;
+;;
+;;; Return the unique ID of the console windows if it exists
+TerminalWindowExist()
+{
+  global TerminalTitle, TerminalType
+
+  ;; get all windows id
+  WinGet, id, list,,, Program Manager
+  ;; go through all windows id
+  Loop, %id%
+  {
+    ;; get ahk id
+    WinId := id%A_Index%
+    ;; get the title
+    WinGetTitle, WinTitle, ahk_id %WinId%
+    ;; when the title match the terminal title
+    tmpMatched = "i).*".TerminalTitle."$"
+    WinTitleMatched := RegExMatch(WinTitle, tmpMatched)
+    If WinTitleMatched != 0
+    {
+      ;; get process name of this window
+      WinGet, WinPName, ProcessName, ahk_id %WinId%
+      ;; when the process name match the terminal type
+      IfInString, WinPName, %TerminalType%
+      {
+        ;; return id of this window
+        Return WinId
+      }
+    }
+  }
+
+  ;; nothing has been found
+  Return -1
 }
 Return
 

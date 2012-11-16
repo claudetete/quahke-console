@@ -112,7 +112,7 @@ IniRead, TerminalShell,   QuahkeConsole.ini, Misc, TerminalShell, bash
 ;; history size in terminal Cygwin/rxvt
 IniRead, TerminalHistory, QuahkeConsole.ini, Misc, TerminalHistory, 5000
 ;; path of Cygwin (to run rxvt)
-IniRead, CygwinPath,      QuahkeConsole.ini, Misc, CygwinPath, C:\cygwin
+IniRead, ExecPath,        QuahkeConsole.ini, Misc, ExecPath, C:\cygwin\bin
 ;;
 ;; version number
 SoftwareVersion := "0.9"
@@ -253,7 +253,7 @@ ShowHide:
     else if TerminalType = rxvt
     {
       ;; launch rxvt
-      Run "%CygwinPath%\bin\rxvt.exe" -display :0 -sl %TerminalHistory% -fg %TerminalForeground% -bg %TerminalBackground% -fn %TerminalFont% -fb %TerminalFont% -fm %TerminalFont% -tn rxvt -title %TerminalTitle% -g %NbCharacterX%x%NbCharacterY% -e /bin/%TerminalShell% --login -i, , Hide, WinPID
+      Run "%ExecPath%\rxvt.exe" -display :0 -sl %TerminalHistory% -fg %TerminalForeground% -bg %TerminalBackground% -fn %TerminalFont% -fb %TerminalFont% -fm %TerminalFont% -tn rxvt -title %TerminalTitle% -g %NbCharacterX%x%NbCharacterY% -e /bin/%TerminalShell% --login -i, , Hide, WinPID
       ;; rxvt is long to be launched so wait a little
       Sleep, 150
     }
@@ -519,5 +519,5 @@ MenuCreateSaveIni:
   ;; Section Misc
   IniWrite, %TerminalShell%,   QuahkeConsole.ini, Misc, TerminalShell
   IniWrite, %TerminalHistory%, QuahkeConsole.ini, Misc, TerminalHistory
-  IniWrite, %CygwinPath%,      QuahkeConsole.ini, Misc, CygwinPath
+  IniWrite, %ExecPath%,        QuahkeConsole.ini, Misc, ExecPath
 Return

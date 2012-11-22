@@ -1,5 +1,5 @@
-#summary How to install/use/configure QuahkeConsole
-#labels Featured,Phase-Deploy,console,terminal,rxvt,cygwin,cmd,quake,tilda
+#summary How to install/use/configure QuahkeConsole (quake style console in MS Windows)
+#labels Featured,Phase-Deploy,console,terminal,rxvt,cygwin,cmd,quake,tilda,guake,yakuake
 
 = Installation =
  * Download the latest version of QuahkeConsole http://code.google.com/p/quahke-console/downloads/list
@@ -44,7 +44,7 @@
 
 === Section Terminal ===
 || *Name* || *About* || *Default* ||
-|| *TerminalType* || Type of terminal you want, only *rxvt* or *cmd* || _cmd_ ||
+|| *TerminalType* || Type of terminal you want, only *rxvt* or *cmd* or *mintty* || _cmd_ ||
 || TerminalTitle || Title of the console window || _QuahkeConsole_ ||
 
 === Section Display ===
@@ -61,6 +61,7 @@
 || TerminalShell || Shell you want used in the terminal window (only rxvt) || _bash_ ||
 || TerminalHistory || Number of lines to be keep in memory (only rxvt) || _5000_ ||
 || ExecPath || Path of the executable (only rxvt) || _C:\cygwin\bin_ ||
+|| NoConfigMintty || Take mintty configuration from your .minttyrc and not from QuahkeConsole.ini || False ||
 
 = rxvt =
 Example of settings for rxvt:
@@ -92,6 +93,7 @@ TerminalAlwaysOnTop=True
 TerminalShell=zsh
 TerminalHistory=10000
 ExecPath=D:\cygwin\bin
+NoConfigMintty=False
 }}}
  * In the .Xdefaults file from the cygwin home:
 {{{
@@ -131,3 +133,6 @@ ExecPath=D:\cygwin\bin
   Rxvt*color7:       #F1F1F1
   Rxvt*color15:      #FFFFFF
 }}}
+
+= mintty =
+To use your configuration file (~/.minttyrc) set *NoConfigMintty* in *Misc* section but, the alpha and font setting in QuahkeConsole.ini will be not considered.

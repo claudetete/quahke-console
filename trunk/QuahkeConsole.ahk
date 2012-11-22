@@ -18,7 +18,7 @@
 ;;
 
 ;; Author: Claude Tete  <claude.tete@gmail.com>
-;; Version: 0.9
+;; Version: 1.0
 ;; Created: February 2011
 ;; Last-Updated: November 2012
 
@@ -31,6 +31,9 @@
 ;;  Default settings are for cmd with default font (8x12) on Windows XP
 
 ;;; Change Log:
+;; 2012-11-21 (1.0)
+;;     hide decoration with rxvt (not possible with cmd) + fix compute number of
+;;     characters + add mintty
 ;; 2012-11-16 (0.9)
 ;;     fix behaviour in Win7 with cmd + add robustness + some fix for rxvt
 ;; 2012-11-15 (0.8)
@@ -60,6 +63,8 @@
 ;;; ENVIRONMENT
 ;; Recommended for performance and compatibility with future AutoHotkey.
 #NoEnv
+;; Recommended for catching common errors.
+#Warn
 ;; Recommended for new scripts due to its superior speed and reliability.
 SendMode Input
 ;; Ensures a consistent starting directory.
@@ -70,14 +75,14 @@ SetWorkingDir %A_ScriptDir%
 ;
 ;;
 ;;; SETTING
-;; position in X to hide window decoration (screen left = 0)
-IniRead, PosX,    QuahkeConsole.ini, Position, PosX, -5
-;; position in Y to hide window decoration (screen top = 0)
-IniRead, PosY,    QuahkeConsole.ini, Position, PosY, -25
-;; offset to remove window decoration in X
-IniRead, OffsetX, QuahkeConsole.ini, Position, OffsetX, 2
-;; offset to remove window decoration in Y
-IniRead, OffsetY, QuahkeConsole.ini, Position, OffsetY, 6
+;; offset to remove window decoration at left
+IniRead, OffsetLeft,   QuahkeConsole.ini, Position, OffsetLeft, 5
+;; offset to remove window decoration at right
+IniRead, OffsetRight,  QuahkeConsole.ini, Position, OffsetRight, 2
+;; offset to remove window decoration at top
+IniRead, OffsetTop,    QuahkeConsole.ini, Position, OffsetTop, 25
+;; offset to remove window decoration at bottom
+IniRead, OffsetBottom, QuahkeConsole.ini, Position, OffsetBottom, 6
 ;;
 ;; percent size in X for the terminal window (%)
 IniRead, SizePercentX, QuahkeConsole.ini, Size, SizePercentX, 100
@@ -97,15 +102,17 @@ IniRead, TerminalType,  QuahkeConsole.ini, Terminal, TerminalType, cmd
 IniRead, TerminalTitle, QuahkeConsole.ini, Terminal, TerminalTitle, QuahkeConsole
 ;;
 ;; Transparence of terminal in percent (invisible (0) to full opaque (100))
-IniRead, TerminalAlpha,      QuahkeConsole.ini, Display, TerminalAlpha, 80
+IniRead, TerminalAlpha,       QuahkeConsole.ini, Display, TerminalAlpha, 80
 ;; foreground color in terminal Cygwin/rxvt
-IniRead, TerminalForeground, QuahkeConsole.ini, Display, TerminalForeground, white
+IniRead, TerminalForeground,  QuahkeConsole.ini, Display, TerminalForeground, white
 ;; background color in terminal Cygwin/rxvt
-IniRead, TerminalBackground, QuahkeConsole.ini, Display, TerminalBackground, black
+IniRead, TerminalBackground,  QuahkeConsole.ini, Display, TerminalBackground, black
 ;; time in ms of animation of hide/show console window
-IniRead, TerminalSlideTime,  QuahkeConsole.ini, Display, TerminalSlideTime, 250
+IniRead, TerminalSlideTime,   QuahkeConsole.ini, Display, TerminalSlideTime, 250
 ;; time in ms of going to position in animation (Tau~63%, 3Tau~95%, 5Tau~99%)
-IniRead, TerminalSlideTau,   QuahkeConsole.ini, Display, TerminalSlideTau, 70
+IniRead, TerminalSlideTau,    QuahkeConsole.ini, Display, TerminalSlideTau, 70
+;; always on top
+IniRead, TerminalAlwaysOnTop, QuahkeConsole.ini, Display, TerminalAlwaysOnTop, True
 ;;
 ;; shell in terminal Cygwin/rxvt
 IniRead, TerminalShell,   QuahkeConsole.ini, Misc, TerminalShell, bash
@@ -115,13 +122,20 @@ IniRead, TerminalHistory, QuahkeConsole.ini, Misc, TerminalHistory, 5000
 IniRead, ExecPath,        QuahkeConsole.ini, Misc, ExecPath, C:\cygwin\bin
 ;;
 ;; version number
-SoftwareVersion := "0.9"
+SoftwareVersion := "1.0"
 ;;
 ;; Precision of pixel move for animation of the window
 TimerMovePrecision := 20
 ;;
 ;; Unique ID of the console window
 TerminalHWND := -1
+;;
+;; screen size
+ScreenSizeX := 0
+ScreenSizeY := 0
+;; Console window position
+PosX := 0
+PosY := 0
 
 ;
 ;;
@@ -175,6 +189,8 @@ Return
 ;;; SHORTCUT
 ;; Launch console if necessary; hide/show on Win+` or F1
 F1::GoSub, ShowHide
+;; reload ini or script (use by test script)
+!^F1::Reload
 ;;
 ;; move by word (right)
 #IfWinActive QuahkeConsole
@@ -199,8 +215,8 @@ ShowHide:
   SetTitleMatchMode, 3
   ;;
   ;; get the size of the current monitor (without taskbar)
-  SysGet, ScreenSizeX, 61
-  SysGet, ScreenSizeY, 62
+  SysGet, ScreenSizeX, 16 ; not 61 (I think documentation is wrong)
+  SysGet, ScreenSizeY, 17 ; not 62
 
   ;; get the console window id (-1 if nothing found)
   TerminalHWND := TerminalWindowExist()
@@ -218,19 +234,9 @@ ShowHide:
     }
     else
     {
-      ;; when no window was save before the console window was not launched by
-      ;; this instance of script
-      If !PrevActive
-      {
-        ;; get size of terminal window
-        WinGetPos, , , W, H, ahk_id %TerminalHWND%
-        ;; set size of mask
-        MaskX := W - OffsetX
-        ;; the window decoration
-        MaskY := H - OffsetY
-      }
       ;; get the title of the current window
       PrevActive := WinActive()
+      ;; TODO: test if window is not active but already show
       ;;
       ;; Display the hidden console window
       WindowSlideDown(TerminalHWND)
@@ -242,49 +248,100 @@ ShowHide:
     PrevActive := WinActive()
     ;;
     ;; number of line and column in chosen font
-    NbCharacterX := Round((SizePercentX * (ScreenSizeX - OffsetX + PosX)) / (100 * CharacterSizeX), 0)
-    NbCharacterY := Round((SizePercentY * (ScreenSizeY - OffsetY + PosY)) / (100 * CharacterSizeY), 0)
+    NbCharacterX := Ceil((SizePercentX * ScreenSizeX) / (100 * CharacterSizeX))
+    NbCharacterY := Ceil((SizePercentY * ScreenSizeY) / (100 * CharacterSizeY))
 
+    ;;;;;;;;;;;;;;;;;;;;;
+    ;; CMD
+    ;;;;;;;;;;;;;;;;;;;;;
     if TerminalType = cmd
     {
       ;; launch cmd
-      Run "%A_WinDir%\system32\cmd.exe" /K "title %TerminalTitle% & mode con:cols=%NbCharacterX% lines=%NbCharacterY%", , Hide, WinPID
+      Run "%A_WinDir%\system32\cmd.exe" /K "title %TerminalTitle% & mode con:cols=%NbCharacterX% lines=%NbCharacterY%", , , WinPID
     }
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;; RXVT
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;
     else if TerminalType = rxvt
     {
+      ;; to view all character
+      NbCharacterX := NbCharacterX - 1
       ;; launch rxvt
       Run "%ExecPath%\rxvt.exe" -display :0 -sl %TerminalHistory% -fg %TerminalForeground% -bg %TerminalBackground% -fn %TerminalFont% -fb %TerminalFont% -fm %TerminalFont% -tn rxvt -title %TerminalTitle% -g %NbCharacterX%x%NbCharacterY% -e /bin/%TerminalShell% --login -i, , Hide, WinPID
-      ;; rxvt is long to be launched so wait a little
+      ;; rxvt is long to be launched so wait a little (WinPID = not same pid)
       Sleep, 150
     }
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;; MINTTY
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    else if TerminalType = mintty
+    {
+      ;; split font and font size
+      StringSplit, Fonts, TerminalFont, -
+
+      ;; manage mintty transparency
+      ;; transparency is not very strong
+      TerminalTransparency = off ; min
+      if TerminalAlpha < 100
+      {
+        TerminalTransparency = low
+      }
+      else if TerminalAlpha < 98
+      {
+         TerminalTransparency = medium
+      }
+      else if TerminalAlpha < 95
+      {
+        TerminalTransparency = high ; max
+      }
+
+      ;; make config file
+      FileDelete, QuahkeConsolerc
+      FileAppend,
+      (
+Font=%Fonts1%
+FontHeight=%Fonts2%
+Transparency=%TerminalTransparency%
+Scrollbar=none
+      ), QuahkeConsolerc
+
+      ;; to view all character
+      NbCharacterX := NbCharacterX - 1
+      ;; launch mintty
+      Run "%ExecPath%\mintty.exe" --title %TerminalTitle% --config QuahkeConsolerc --size %NbCharacterX%`,%NbCharacterY% --window hide --exec /bin/%TerminalShell% --login -i, , Hide, WinPID
+    }
+    ;;;;;;;;;;;;;
+    ;; Unknown
+    ;;;;;;;;;;;;;
     else
     {
       ;; show an error dialog box
-      MsgBox, 0x80, QuahkeConsole: error, Error: wrong TerminalType, it must be "cmd" or "rxvt"
+      MsgBox, 0x80, QuahkeConsole: error, Error: wrong TerminalType, it must be "cmd" or "rxvt" or "mintty"
       Exit, -2
     }
 
-    ;; wait instance of console window (FIXME PID for rxvt it is not the same)
+    ;; wait instance of console window
     WinWait, ahk_pid %WinPID%
     ;;
     ;; get the unique id of the console window
     TerminalHWND := TerminalWindowExist()
-    ;;
-    ;; get size of terminal window
-    WinGetPos, , , W, H, ahk_id %TerminalHWND%
-    ;; set size of mask
-    MaskX := W - OffsetX
-    ;; the window decoration
-    MaskY := H - OffsetY
 
-    ;; make the window of the terminal with alpha of 200
+    ;; make the window of the terminal with alpha of 200 (only with rxvt)
     ;; (full transparent = 0, full opaque = 255)
     Alpha := (TerminalAlpha * 255) / 100
     WinSet, Transparent, %Alpha%, ahk_id %TerminalHWND%
     ;;
-    ;; set the window to be always in front of other windows
-    Winset, AlwaysOnTop, On, ahk_id %TerminalHWND%
-
+    ;; console window always on top ? (use by test script)
+    if TerminalAlwaysOnTop = True
+    {
+      ;; set the window to be always in front of other windows
+      Winset, AlwaysOnTop, On, ahk_id %TerminalHWND%
+    }
+    else
+    {
+      ;; set the window to be always in front of other windows
+      Winset, AlwaysOnTop, Off, ahk_id %TerminalHWND%
+    }
     ;; show the window by the top
     WindowSlideDown(TerminalHWND)
   }
@@ -298,23 +355,24 @@ Return
 ;;; Slide a Windows outside the screen by the top (to hide it)
 WindowSlideUp(WindowHWND)
 {
-  global TerminalSlideTime, PosX, PosY, OffsetY, TimerMovePrecision, TerminalSlideTau
+  global TerminalSlideTime, PosX, PosY, OffsetBottom, TimerMovePrecision, TerminalSlideTau
 
-  ;; enable animation only when the timer is not null (or negative)
+  ;; move windows immediately
+  SetWinDelay, -1
+
+;; enable animation only when the timer is not null (or negative)
   if TerminalSlideTime > 0
   {
     ;; to be sure that the console window is at the right place
     WinMove, ahk_id %WindowHWND%, , PosX, PosY
-    ;; move windows immediately
-    SetWinDelay, -1
     ;; get pos and window size
     WinGetPos, WinPosX, WinPosY, W, H, ahk_id %WindowHWND%
     ;; Position of window out of screen to hide it
-    WinHeight := H + PosY - OffsetY
-    PosToStop := WinPosY - WinHeight
+    WinHeight := H - OffsetBottom
+    PosToStop := PosY - WinHeight
 
     ;; compute move precision to set time limit
-    MovePrecision := Round((TimerMovePrecision * (H + PosY - OffsetY)) / TerminalSlideTime, 0)
+    MovePrecision := Round((TimerMovePrecision * WinHeight) / TerminalSlideTime, 0)
     ;; init time value
     CurrentTime := 0
 
@@ -338,7 +396,7 @@ WindowSlideUp(WindowHWND)
       }
       else
       {
-        ;; move up the window with the previcion pixel
+        ;; move up the window with the precision pixel
         WinPosY := WinPosY - MovePrecision
       }
 
@@ -365,21 +423,50 @@ Return
 ;;; Slide a Windows inside the screen by the top (to show it)
 WindowSlideDown(WindowHWND)
 {
-  global TerminalSlideTime, PosX, PosY, OffsetY, TimerMovePrecision, MaskX, MaskY, TerminalSlideTau
+  global TerminalSlideTime, PosX, PosY, TimerMovePrecision, TerminalSlideTau
+  global OffsetTop, OffsetLeft, OffsetRight, OffsetBottom, ScreenSizeX, ScreenSizeY
+  global PosX, PosY, NbCharacterX, SizePercentX
+  ;;
+  ;; styles to be remove from console window
+  WS_POPUP         := 0x80000000
+  WS_CAPTION       :=   0xC00000
+  WS_THICKFRAME    :=    0x40000
+  WS_EX_CLIENTEDGE :=      0x200
 
   ;; move windows immediately
   SetWinDelay, -1
 
+  ;; remove almost all decoration window (do not work with cmd)
+  WinSet, Style, % -(WS_POPUP|WS_CAPTION|WS_THICKFRAME), ahk_id %WindowHWND%
+  WinSet, ExStyle, % -WS_EX_CLIENTEDGE, ahk_id %WindowHWND%
+
   ;; get window size
   WinGetPos, , , W, H, ahk_id %WindowHWND%
+  ;; TODO get size window decoration
+  ;; set size of mask to hide window decoration
+  MaskX := W - OffsetRight - OffsetLeft
+  MaskY := H - OffsetBottom - OffsetTop
+  ;; mask window border
+  WinSet, Region, %OffsetLeft%-%OffsetTop% w%MaskX% h%MaskY%, ahk_id %WindowHWND%
+
+  ;; get window size
+  WinGetPos, , , W, H, ahk_id %WindowHWND%
+  if SizePercentX != 100
+  {
+    PosX := Ceil((ScreenSizeX - ((SizePercentX * ScreenSizeX) / 100)) / 2) - OffsetLeft
+  }
+  else
+  {
+    PosX := -OffsetLeft
+  }
+  PosY := -OffsetTop
 
   ;; place the window
-  WinMove, ahk_id %WindowHWND%, , PosX, ((H + PosY + OffsetY) * -1)
-  WinSet, Region, 0-0 w%MaskX% h%MaskY%, ahk_id %WindowHWND%
-
-  ;; Display the hidden console2 window
+  WinMove, ahk_id %WindowHWND%, ,  PosX, PosY - H
+  ;;
+  ;; Display the hidden console window
   WinShow, ahk_id %WindowHWND%
-
+  ;;
   ;; make active the console2 window
   WinActivate, ahk_id %WindowHWND%
 
@@ -389,12 +476,12 @@ WindowSlideDown(WindowHWND)
     ;; get pos and window size
     WinGetPos, WinPosX, WinPosY, W, H, ahk_id %WindowHWND%
     ;; height of showed window
-    WinHeight := H + PosY - OffsetY
+    WinHeight := H
     ;; Position of window out of screen to showit
     PosToStop := PosY
 
     ;; compute move precision to set time limit
-    MovePrecision := Round((TimerMovePrecision * (H + PosY - OffsetY)) / TerminalSlideTime, 0)
+    MovePrecision := Round((TimerMovePrecision * WinHeight) / TerminalSlideTime, 0)
     ;; init time value
     CurrentTime := 0
 
@@ -418,7 +505,7 @@ WindowSlideDown(WindowHWND)
       }
       else
       {
-        ;; move up the window with the previcion pixel
+        ;; move up the window with the precision pixel
         WinPosY := WinPosY + MovePrecision
       }
 
@@ -448,8 +535,10 @@ TerminalWindowExist()
 {
   global TerminalTitle, TerminalType
 
+  ;; set regex
+  RegExMatched = i).*%TerminalTitle%\s*$
   ;; get all windows id
-  WinGet, id, list,,, Program Manager
+  WinGet, id, list, , , Program Manager
   ;; go through all windows id
   Loop, %id%
   {
@@ -457,25 +546,28 @@ TerminalWindowExist()
     WinId := id%A_Index%
     ;; get the title
     WinGetTitle, WinTitle, ahk_id %WinId%
-    ;; set regex
-    tmpMatched = "i).*%TerminalTitle%$"
-    ;; match the title
-    WinTitleMatched := RegExMatch(WinTitle, tmpMatched)
-    ;; when the title match the terminal title
-    If WinTitleMatched != 0
+    if WinTitle
     {
-      ;; get process name of this window
-      WinGet, WinPName, ProcessName, ahk_id %WinId%
-      ;; when the process name match the terminal type
-      IfInString, WinPName, %TerminalType%
+      ;; match the title
+      WinTitleMatched := RegExMatch(WinTitle, RegExMatched)
+      ;; when the title match the terminal title
+      if WinTitleMatched
       {
-        ;; return id of this window
-        Return WinId
+        if  WinTitleMatched > 0
+        {
+          ;; get process name of this window
+          WinGet, WinPName, ProcessName, ahk_id %WinId%
+          ;; when the process name match the terminal type
+          IfInString, WinPName, %TerminalType%
+          {
+            ;; return id of this window
+            Return WinId
+          }
+        }
       }
     }
   }
-
-  ;; nothing has been found
+  ;; nothing was found
   Return -1
 }
 Return
@@ -496,10 +588,10 @@ Return
 ;;; Save all settings in a ini file
 MenuCreateSaveIni:
   ;; Section Position
-  IniWrite, %PosX%,    QuahkeConsole.ini, Position, PosX
-  IniWrite, %PosY%,    QuahkeConsole.ini, Position, PosY
-  IniWrite, %OffsetX%, QuahkeConsole.ini, Position, OffsetX
-  IniWrite, %OffsetY%, QuahkeConsole.ini, Position, OffsetY
+  IniWrite, %OffsetLeft%,   QuahkeConsole.ini, Position, OffsetLeft
+  IniWrite, %OffsetRight%,  QuahkeConsole.ini, Position, OffsetRight
+  IniWrite, %OffsetTop%,    QuahkeConsole.ini, Position, OffsetTop
+  IniWrite, %OffsetBottom%, QuahkeConsole.ini, Position, OffsetBottom
   ;; Section Size
   IniWrite, %SizePercentX%, QuahkeConsole.ini, Size, SizePercentX
   IniWrite, %SizePercentY%, QuahkeConsole.ini, Size, SizePercentY
@@ -511,11 +603,12 @@ MenuCreateSaveIni:
   IniWrite, %TerminalType%,  QuahkeConsole.ini, Terminal, TerminalType
   IniWrite, %TerminalTitle%, QuahkeConsole.ini, Terminal, TerminalTitle
   ;; Section Display
-  IniWrite, %TerminalAlpha%,      QuahkeConsole.ini, Display, TerminalAlpha
-  IniWrite, %TerminalForeground%, QuahkeConsole.ini, Display, TerminalForeground
-  IniWrite, %TerminalBackground%, QuahkeConsole.ini, Display, TerminalBackground
-  IniWrite, %TerminalSlideTime%,  QuahkeConsole.ini, Display, TerminalSlideTime
-  IniWrite, %TerminalSlideTau%,  QuahkeConsole.ini, Display, TerminalSlideTau
+  IniWrite, %TerminalAlpha%,       QuahkeConsole.ini, Display, TerminalAlpha
+  IniWrite, %TerminalForeground%,  QuahkeConsole.ini, Display, TerminalForeground
+  IniWrite, %TerminalBackground%,  QuahkeConsole.ini, Display, TerminalBackground
+  IniWrite, %TerminalSlideTime%,   QuahkeConsole.ini, Display, TerminalSlideTime
+  IniWrite, %TerminalSlideTau%,    QuahkeConsole.ini, Display, TerminalSlideTau
+  IniWrite, %TerminalAlwaysOnTop%, QuahkeConsole.ini, Display, TerminalAlwaysOnTop
   ;; Section Misc
   IniWrite, %TerminalShell%,   QuahkeConsole.ini, Misc, TerminalShell
   IniWrite, %TerminalHistory%, QuahkeConsole.ini, Misc, TerminalHistory

@@ -18,7 +18,7 @@
   Pause Script
   Exit
 }}}
- * Of course if you want use rxvt you have to install [http://www.cygwin.com Cygwin] with the package rxvt (example of settings in [UserGuide#rxvt])
+ * Of course if you want use rxvt you have to install [http://www.cygwin.com Cygwin] with the package rxvt (example of settings in [UserGuide#rxvt]), same for mintty.
 
 = Configuration =
  * Create the .ini file (default value are for Windows XP, cmd and 8x12 font)
@@ -26,10 +26,10 @@
 
 === Section Position ===
 || *Name* || *About* || *Default* ||
-|| PosX || Position in X of the console window, left of screen = 0 || _-5_ ||
-|| PosY || Position in Y of the console window, top of screen = 0 || _-25_ ||
-|| OffsetX || Width of the right decoration of the console window || _2_ ||
-|| OffsetY || Height of the bottom decoration of the console window || _6_ ||
+|| OffsetLeft || Offset to hide console window decoration by the left || _6_ ||
+|| OffsetRight || Offset to hide console window decoration by the right || _25_ ||
+|| OffsetTop || Offset to hide console window decoration by the top || _6_ ||
+|| OffsetBottom || Offset to hide console window decoration by the bottom || _6_ ||
 
 === Section Size ===
 || *Name* || *About* || *Default* ||
@@ -38,9 +38,9 @@
 
 === Section Font ===
 || *Name* || *About* || *Default* ||
-|| TerminalFont || Font to be used in the console (only rxvt) || _Terminal-8_ ||
+|| TerminalFont || Font to be used in the console (only rxvt) || _Courier-12_ ||
 || CharacterSizeX || Font width used in the console || _8_ ||
-|| CharacterSizeY || Font height used in the console || _12_ ||
+|| CharacterSizeY || Font height used in the console || _13_ ||
 
 === Section Terminal ===
 || *Name* || *About* || *Default* ||
@@ -54,6 +54,7 @@
 || TerminalBackground || Color of the background of the terminal (only rxvt) || _black_ ||
 || TerminalSlideTime || Time to show or hide the console window || _250_ ||
 || TerminalSlideTau || Constant time to configure the animation (first order filter) || _70_ ||
+|| TerminalAlwaysOnTop || Boolean to set console window always on top or not || _True_ ||
 
 === Section Misc ===
 || *Name* || *About* || *Default* ||
@@ -65,31 +66,32 @@
 Example of settings for rxvt:
  * In the QuahkeConsole.ini file:
 {{{
-  [Position]
-  PosX=-5
-  PosY=-25
-  OffsetX=2
-  OffsetY=6
-  [Size]
-  SizePercentX=100
-  SizePercentY=20
-  [Font]
-  TerminalFont=ProggyTinySZ-6
-  CharacterSizeX=6
-  CharacterSizeY=8
-  [Terminal]
-  TerminalType=rxvt
-  TerminalTitle=QuahkeConsole
-  [Display]
-  TerminalAlpha=80
-  TerminalForeground=white
-  TerminalBackground=black
-  TerminalSlideTime=100
-  TerminalSlideTau=30
-  [Misc]
-  TerminalShell=zsh
-  TerminalHistory=10000
-  CygwinPath=D:\cygwin
+[Position]
+OffsetTop=0
+OffsetLeft=0
+OffsetRight=0
+OffsetBottom=0
+[Size]
+SizePercentX=100
+SizePercentY=20
+[Font]
+TerminalFont=ProggyTinySZ-6
+CharacterSizeX=6
+CharacterSizeY=8
+[Terminal]
+TerminalType=rxvt
+TerminalTitle=QuahkeConsole
+[Display]
+TerminalAlpha=80
+TerminalForeground=white
+TerminalBackground=black
+TerminalSlideTime=100
+TerminalSlideTau=30
+TerminalAlwaysOnTop=True
+[Misc]
+TerminalShell=zsh
+TerminalHistory=10000
+ExecPath=D:\cygwin\bin
 }}}
  * In the .Xdefaults file from the cygwin home:
 {{{

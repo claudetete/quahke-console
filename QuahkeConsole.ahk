@@ -31,9 +31,9 @@
 ;;  Default settings are for cmd with default font (8x12) on Windows XP
 
 ;;; Change Log:
-;; 2012-11-21 (1.0)
+;; 2012-11-22 (1.0)
 ;;     hide decoration with rxvt (not possible with cmd) + fix compute number of
-;;     characters + add mintty
+;;     characters + add mintty (with option to use default config)
 ;; 2012-11-16 (0.9)
 ;;     fix behaviour in Win7 with cmd + add robustness + some fix for rxvt
 ;; 2012-11-15 (0.8)
@@ -76,9 +76,9 @@ SetWorkingDir %A_ScriptDir%
 ;;
 ;;; SETTING
 ;; offset to remove window decoration at left
-IniRead, OffsetLeft,   QuahkeConsole.ini, Position, OffsetLeft, 5
+IniRead, OffsetLeft,   QuahkeConsole.ini, Position, OffsetLeft, 6
 ;; offset to remove window decoration at right
-IniRead, OffsetRight,  QuahkeConsole.ini, Position, OffsetRight, 2
+IniRead, OffsetRight,  QuahkeConsole.ini, Position, OffsetRight, 6
 ;; offset to remove window decoration at top
 IniRead, OffsetTop,    QuahkeConsole.ini, Position, OffsetTop, 25
 ;; offset to remove window decoration at bottom
@@ -90,11 +90,11 @@ IniRead, SizePercentX, QuahkeConsole.ini, Size, SizePercentX, 100
 IniRead, SizePercentY, QuahkeConsole.ini, Size, SizePercentY, 30
 ;;
 ;; font in terminal Cygwin/rxvt
-IniRead, TerminalFont,   QuahkeConsole.ini, Font, TerminalFont, Terminal-8
+IniRead, TerminalFont,   QuahkeConsole.ini, Font, TerminalFont, Courier-12
 ;; Character Size in X
 IniRead, CharacterSizeX, QuahkeConsole.ini, Font, CharacterSizeX, 8
 ;; Character Size in Y
-IniRead, CharacterSizeY, QuahkeConsole.ini, Font, CharacterSizeY, 12
+IniRead, CharacterSizeY, QuahkeConsole.ini, Font, CharacterSizeY, 13
 ;;
 ;; type of terminal MS/cmd or Cygwin/rxvt
 IniRead, TerminalType,  QuahkeConsole.ini, Terminal, TerminalType, cmd
@@ -120,6 +120,8 @@ IniRead, TerminalShell,   QuahkeConsole.ini, Misc, TerminalShell, bash
 IniRead, TerminalHistory, QuahkeConsole.ini, Misc, TerminalHistory, 5000
 ;; path of Cygwin (to run rxvt)
 IniRead, ExecPath,        QuahkeConsole.ini, Misc, ExecPath, C:\cygwin\bin
+;; take default config from you config file (~/.minttyrc)
+IniRead, NoConfigMintty,  QuahkeConsole.ini, Misc, NoConfigMintty, False
 ;;
 ;; version number
 SoftwareVersion := "1.0"
@@ -276,39 +278,50 @@ ShowHide:
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     else if TerminalType = mintty
     {
-      ;; split font and font size
-      StringSplit, Fonts, TerminalFont, -
+      if NoConfigMintty = True
+      {
+        ;; take default config file (~/.minttyrc)
+        ConfigMintty =
+      }
+      else
+      {
+        ;; split font and font size
+        StringSplit, Fonts, TerminalFont, -
 
-      ;; manage mintty transparency
-      ;; transparency is not very strong
-      TerminalTransparency = off ; min
-      if TerminalAlpha < 100
-      {
-        TerminalTransparency = low
-      }
-      else if TerminalAlpha < 98
-      {
-         TerminalTransparency = medium
-      }
-      else if TerminalAlpha < 95
-      {
-        TerminalTransparency = high ; max
-      }
+        ;; manage mintty transparency
+        ;; transparency is not very strong
+        TerminalTransparency = off ; min
+        if TerminalAlpha < 100
+        {
+          TerminalTransparency = low
+        }
+        else if TerminalAlpha < 98
+        {
+           TerminalTransparency = medium
+        }
+        else if TerminalAlpha < 95
+        {
+          TerminalTransparency = high ; max
+        }
 
-      ;; make config file
-      FileDelete, QuahkeConsolerc
-      FileAppend,
-      (
+        ;; make config file
+        FileDelete, QuahkeConsolerc
+        FileAppend,
+        (
 Font=%Fonts1%
 FontHeight=%Fonts2%
 Transparency=%TerminalTransparency%
 Scrollbar=none
-      ), QuahkeConsolerc
+        ), QuahkeConsolerc
+
+        ;; take temporary config file
+        ConfigMintty = --config QuahkeConsolerc
+      }
 
       ;; to view all character
       NbCharacterX := NbCharacterX - 1
       ;; launch mintty
-      Run "%ExecPath%\mintty.exe" --title %TerminalTitle% --config QuahkeConsolerc --size %NbCharacterX%`,%NbCharacterY% --window hide --exec /bin/%TerminalShell% --login -i, , Hide, WinPID
+      Run "%ExecPath%\mintty.exe" --title %TerminalTitle% %ConfigMintty% --size %NbCharacterX%`,%NbCharacterY% --window hide --exec /bin/%TerminalShell% --login -i, , Hide, WinPID
     }
     ;;;;;;;;;;;;;
     ;; Unknown
@@ -613,4 +626,5 @@ MenuCreateSaveIni:
   IniWrite, %TerminalShell%,   QuahkeConsole.ini, Misc, TerminalShell
   IniWrite, %TerminalHistory%, QuahkeConsole.ini, Misc, TerminalHistory
   IniWrite, %ExecPath%,        QuahkeConsole.ini, Misc, ExecPath
+  IniWrite, %NoConfigMintty%,  QuahkeConsole.ini, Misc, NoConfigMintty
 Return

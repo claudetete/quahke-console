@@ -18,9 +18,9 @@
 ;;
 
 ;; Author: Claude Tete  <claude.tete@gmail.com>
-;; Version: 1.0
+;; Version: 1.1
 ;; Created: February 2011
-;; Last-Updated: November 2012
+;; Last-Updated: December 2012
 
 ;;; Commentary:
 ;; Based on (htanks to Wojciech 'KosciaK' Pietrzok <kosciak1@gmail.com>):
@@ -31,6 +31,8 @@
 ;;  Default settings are for cmd with default font (8x12) on Windows XP
 
 ;;; Change Log:
+;; 2012-12-06 (1.1)
+;;     set alpha and always on top in slide down (not only with creation)
 ;; 2012-11-22 (1.0)
 ;;     hide decoration with rxvt (not possible with cmd) + fix compute number of
 ;;     characters + add mintty (with option to use default config)
@@ -124,7 +126,7 @@ IniRead, ExecPath,        QuahkeConsole.ini, Misc, ExecPath, C:\cygwin\bin
 IniRead, NoConfigMintty,  QuahkeConsole.ini, Misc, NoConfigMintty, False
 ;;
 ;; version number
-SoftwareVersion := "1.0"
+SoftwareVersion := "1.1"
 ;;
 ;; Precision of pixel move for animation of the window
 TimerMovePrecision := 20
@@ -339,22 +341,6 @@ Scrollbar=none
     ;; get the unique id of the console window
     TerminalHWND := TerminalWindowExist()
 
-    ;; make the window of the terminal with alpha of 200 (only with rxvt)
-    ;; (full transparent = 0, full opaque = 255)
-    Alpha := (TerminalAlpha * 255) / 100
-    WinSet, Transparent, %Alpha%, ahk_id %TerminalHWND%
-    ;;
-    ;; console window always on top ? (use by test script)
-    if TerminalAlwaysOnTop = True
-    {
-      ;; set the window to be always in front of other windows
-      Winset, AlwaysOnTop, On, ahk_id %TerminalHWND%
-    }
-    else
-    {
-      ;; set the window to be always in front of other windows
-      Winset, AlwaysOnTop, Off, ahk_id %TerminalHWND%
-    }
     ;; show the window by the top
     WindowSlideDown(TerminalHWND)
   }
@@ -438,7 +424,7 @@ WindowSlideDown(WindowHWND)
 {
   global TerminalSlideTime, PosX, PosY, TimerMovePrecision, TerminalSlideTau
   global OffsetTop, OffsetLeft, OffsetRight, OffsetBottom, ScreenSizeX, ScreenSizeY
-  global PosX, PosY, NbCharacterX, SizePercentX
+  global PosX, PosY, NbCharacterX, SizePercentX, TerminalAlpha, TerminalAlwaysOnTop
   ;;
   ;; styles to be remove from console window
   WS_POPUP         := 0x80000000
@@ -448,6 +434,24 @@ WindowSlideDown(WindowHWND)
 
   ;; move windows immediately
   SetWinDelay, -1
+
+
+  ;; make the window of the terminal with alpha of 200 (only with rxvt)
+  ;; (full transparent = 0, full opaque = 255)
+  Alpha := (TerminalAlpha * 255) / 100
+  WinSet, Transparent, %Alpha%, ahk_id %WindowHWND%
+  ;;
+  ;; console window always on top ? (use by test script)
+  if TerminalAlwaysOnTop = True
+  {
+    ;; set the window to be always in front of other windows
+    Winset, AlwaysOnTop, On, ahk_id %WindowHWND%
+  }
+  else
+  {
+    ;; set the window to be always in front of other windows
+    Winset, AlwaysOnTop, Off, ahk_id %WindowHWND%
+  }
 
   ;; remove almost all decoration window (do not work with cmd)
   WinSet, Style, % -(WS_POPUP|WS_CAPTION|WS_THICKFRAME), ahk_id %WindowHWND%

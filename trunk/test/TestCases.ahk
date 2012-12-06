@@ -22,9 +22,6 @@ TestMinTTY = True
 ScreenWidth := A_ScreenWidth
 SysGet, ScreenHeight, 62
 
-;; run script to test
-Run, "C:\Program Files\AutoHotkey\AutoHotkey.exe" "..\QuahkeConsole.ahk"
-
 MainTitle = Test QuahkeConsole
 
 ;;------------------------------------------------------------------------------
@@ -107,7 +104,7 @@ if TestMinTTY = True
 
 MsgBox, 0, %MainTitle%, All Tests passed., 60
 
-GoSub, ExitMessage
+exit
 
 
 ;;------------------------------------------------------------------------------
@@ -122,9 +119,8 @@ RunTestCase(TestText, TWidth, THeight, TTime, TAlpha, TFont)
 
   ;; prepare setting file
   CopySettingFile(TWidth, THeight, TTime, TAlpha, TFont)
-  ;; reload script to consider new setting file
-  SendInput, !^{F1}
-  Sleep, 200
+  ;; run script to test
+  Run, "C:\Program Files\AutoHotkey\AutoHotkey.exe" "..\QuahkeConsole.ahk", , , ScriptPID
   ;; open the console window
   SendInput, {F1}
   Sleep, 500
@@ -133,14 +129,15 @@ RunTestCase(TestText, TWidth, THeight, TTime, TAlpha, TFont)
   MsgBox, 3, %MainTitle%, %TestText%:`nA Window of %TConsole% with witdh of %TWidth%`% and height of %THeight%`% show in %TTime% ms and transparency of %TAlpha%`%?, 60
   ;; close console window
   WinClose, QuahkeConsole
+  WinClose, ahk_pid %ScriptPID%
   ;; when Cancel or No, it will exit the test script
   IfMsgBox, No
   {
-    GoSub, ExitMessage
+     exit, 1
   }
   IfMsgBox, Cancel
   {
-    GoSub, ExitMessage
+     exit, 2
   }
 }
 Return
@@ -231,13 +228,4 @@ TerminalHistory=10000
 ExecPath=%TExecPath%
 ), ..\QuahkeConsole.ini ;; ...and end here
 }
-Return
-
-;
-;;
-;;; Function to exit with message
-ExitMessage:
-  ;; warn about quahkeconsole script still running
-  MsgBox, 0, %MainTitle%, Do not forget to kill QuahkeConsole process., 60
-  exit
 Return

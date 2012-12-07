@@ -18,7 +18,7 @@
 ;;
 
 ;; Author: Claude Tete  <claude.tete@gmail.com>
-;; Version: 1.1
+;; Version: 1.2
 ;; Created: February 2011
 ;; Last-Updated: December 2012
 
@@ -29,9 +29,13 @@
 ;;  /TildaConsole.ahk?r=18
 ;;
 ;;  Default settings are for cmd with default font (8x12) on Windows XP
+;;
+;;  Bug: the decoration cannot be hidden with aero on 7 or Vista.
 
 ;;; Change Log:
-;; 2012-12-06 (1.1)
+;; 2012-12-07 (1.2)
+;;     no animation when the window is visible but not active
+;; 2012-12-04 (1.1)
 ;;     set alpha and always on top in slide down (not only with creation)
 ;; 2012-11-22 (1.0)
 ;;     hide decoration with rxvt (not possible with cmd) + fix compute number of
@@ -126,7 +130,7 @@ IniRead, ExecPath,        QuahkeConsole.ini, Misc, ExecPath, C:\cygwin\bin
 IniRead, NoConfigMintty,  QuahkeConsole.ini, Misc, NoConfigMintty, False
 ;;
 ;; version number
-SoftwareVersion := "1.1"
+SoftwareVersion := "1.0"
 ;;
 ;; Precision of pixel move for animation of the window
 TimerMovePrecision := 20
@@ -240,10 +244,21 @@ ShowHide:
     {
       ;; get the title of the current window
       PrevActive := WinActive()
-      ;; TODO: test if window is not active but already show
-      ;;
-      ;; Display the hidden console window
-      WindowSlideDown(TerminalHWND)
+
+      ;; do not detect hidden window
+      DetectHiddenWindows, off
+      ;; when console window is visible
+      IfWinExist, ahk_id %TerminalHWND%
+      {
+         ;; put focus on the console window
+         WinActivate, ahk_id %TerminalHWND%
+      }
+      else
+      {
+         DetectHiddenWindows, on
+        ;; Display the hidden console window
+        WindowSlideDown(TerminalHWND)
+      }
     }
   }
   else
@@ -273,7 +288,7 @@ ShowHide:
       ;; launch rxvt
       Run "%ExecPath%\rxvt.exe" -display :0 -sl %TerminalHistory% -fg %TerminalForeground% -bg %TerminalBackground% -fn %TerminalFont% -fb %TerminalFont% -fm %TerminalFont% -tn rxvt -title %TerminalTitle% -g %NbCharacterX%x%NbCharacterY% -e /bin/%TerminalShell% --login -i, , Hide, WinPID
       ;; rxvt is long to be launched so wait a little (WinPID = not same pid)
-      Sleep, 150
+      ;Sleep, 150
     }
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;; MINTTY

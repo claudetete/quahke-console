@@ -1,0 +1,138 @@
+#summary Comment installer, utiliser et configurer QuahkeConsole (console quake style pour MS Windows)
+#labels Featured,Phase-Deploy,console,terminal,rxvt,cygwin,cmd,quake,tilda,guake,yakuake
+
+= Installation =
+ * Télécharger la dernière version de QuahkeConsole http://code.google.com/p/quahke-console/downloads/list
+ * Dezipper
+
+= Utilisation =
+ * Lancer QuahkeConsole.exe et démarrer avec le raccourci F1
+ * Une nouvelle icone est placée dans la barre système
+ * Clic droit pour afficher le menu
+{{{
+  About
+  Reload .ini file
+  Edit .ini file
+  Create/Save .ini file
+  Suspend Hotkeys
+  Pause Script
+  Exit
+}}}
+ * Bien sûr si vous voulez utiliser rxvt ou mintty, vous devez installer [http://www.cygwin.com Cygwin] avec le paquet rxvt ou mintty (exemple de réglages dans [UserGuide#rxvt]).
+
+= Configuration =
+ * Créer le fichier .ini (valeurs par défaut sont pour Windows XP, cmd et police 8x12)
+ * Éditer le:
+
+=== Section Position ===
+|| *Nom* || *A propos* || *Défaut* ||
+|| OffsetLeft || Offset gauche pour cacher la décoration de la fenêtre de la console || _6_ ||
+|| OffsetRight || Offset droit pour cacher la décoration de la fenêtre de la console || _25_ ||
+|| OffsetTop || Offset haut pour cacher la décoration de la fenêtre de la console || _6_ ||
+|| OffsetBottom || Offset bas pour cacher la décoration de la fenêtre de la console || _6_ ||
+
+=== Section Size ===
+|| *Nom* || *A propos* || *Défaut* ||
+|| SizePercentX || Largeur de la console en pourcentage de l'écran || _100_ ||
+|| SizePercentY || Hauteur de la console en pourcentage de l'écran || _30_ ||
+
+=== Section Font ===
+|| *Nom* || *A propos* || *Défaut* ||
+|| TerminalFont || Police d'écriture utilisée dans la console (seulement rxvt or mintty) || _Courier-12_ ||
+|| CharacterSizeX || Largeur de la police d'écriture utilisée (en pixels) || _8_ ||
+|| CharacterSizeY || Hauteur de la police d'écriture utilisée (en pixels) || _13_ ||
+
+=== Section Terminal ===
+|| *Nom* || *A propos* || *Défaut* ||
+|| *TerminalType* || Type de terminal que vous voulez, seulement *rxvt*, *cmd* ou *mintty* || _cmd_ ||
+|| TerminalTitle || Titre de la fenêtre de la console || _QuahkeConsole_ ||
+
+=== Section Display ===
+|| *Nom* || *A propos* || *Défaut* ||
+|| TerminalAlpha || Valeur de transparence de la fenêtre de la console en pourcentage (only rxvt) || _80_ ||
+|| TerminalForeground || Couleur de la police d'écriture (seulement rxvt) || _white_ ||
+|| TerminalBackground || Couleur de fond de la fenêtre de la console (seulement rxvt) || _black_ ||
+|| TerminalSlideTime || Durée pour afficher ou cacher la fenêtre de la console (en ms) || _250_ ||
+|| TerminalSlideTau || Constante de temps pour configurer l'animation (filtre du premier ordre) (en ms) || _70_ ||
+|| TerminalAlwaysOnTop || Booléen pour avoir la fenêtre de la console toujours au dessus des autres || _True_ ||
+
+=== Section Misc ===
+|| *Nom* || *A propos* || *Défaut* ||
+|| TerminalShell || Shell que vous voulez utiliser (seulement rxvt) || _bash_ ||
+|| TerminalHistory || Nombre de ligne garder en mémoire par la console (seulement rxvt) || _5000_ ||
+|| ExecPath || Chemin de l'éxecutable (seulement rxvt et mintty) || _C:\cygwin\bin_ ||
+|| NoConfigMintty || Ne pas utiliser de fichier de configuration temporaire pour mintty mais votre .minttyrc || False ||
+
+= rxvt =
+Exemple de réglage pour rxvt:
+ * dans le fichier QuahkeConsole.ini :
+{{{
+[Position]
+OffsetTop=0
+OffsetLeft=0
+OffsetRight=0
+OffsetBottom=0
+[Size]
+SizePercentX=100
+SizePercentY=20
+[Font]
+TerminalFont=ProggyTinySZ-6
+CharacterSizeX=6
+CharacterSizeY=8
+[Terminal]
+TerminalType=rxvt
+TerminalTitle=QuahkeConsole
+[Display]
+TerminalAlpha=80
+TerminalForeground=white
+TerminalBackground=black
+TerminalSlideTime=100
+TerminalSlideTau=30
+TerminalAlwaysOnTop=True
+[Misc]
+TerminalShell=zsh
+TerminalHistory=10000
+ExecPath=D:\cygwin\bin
+NoConfigMintty=False
+}}}
+ * Dans le fichier .Xdefaults dans votre home de cygwin :
+{{{
+  Rxvt*background:   #000000
+  Rxvt*foreground:   #ffffff
+  Rxvt*cursorColor:  #d8d8d8
+  Rxvt*colorBD:      lightyellow
+  Rxvt*colorUL:      yellow
+  Rxvt*reverseVideo: false
+  Rxvt*scrollBar:    false
+  Rxvt*keysym.Home:  \033[1~
+  Rxvt*keysym.End:   \033[4~
+  rxvt*loginShell:   true
+  Rxvt*tintColor:    #dfdfdf
+  !! black
+  Rxvt*color0:       #676767
+  Rxvt*color8:       #757575
+  !! red
+  Rxvt*color1:       #EA6868
+  Rxvt*color9:       #FF7272
+  !! green
+  Rxvt*color2:       #ABCB8D
+  Rxvt*color10:      #AFD78A
+  !! yellow
+  !Rxvt*color3:       #E8AE5B
+  Rxvt*color11:      #FFA75D
+  !! blue
+  Rxvt*color4:       #71C5F4
+  Rxvt*color12:      #67CDE9
+  !! magenta
+  Rxvt*color5:       #E2BAF1
+  Rxvt*color13:      #ECAEE9
+  !! cyan
+  Rxvt*color6:       #21F1EA
+  Rxvt*color14:      #36FFFC
+  !! white
+  Rxvt*color7:       #F1F1F1
+  Rxvt*color15:      #FFFFFF
+}}}
+
+= mintty =
+Pour utiliser votre fichier de configuration (~/.minttyrc), mettre *NoConfigMintty* à *True* dans la section *Misc*, les réglages de la transparence et de la police dans QuahkeConsole.ini ne seront plus pris en compte.

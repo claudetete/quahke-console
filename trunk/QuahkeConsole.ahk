@@ -33,7 +33,7 @@
 ;;  Bug: the decoration cannot be hidden with aero on 7 or Vista.
 
 ;;; Change Log:
-;; 2012-12-07 (1.2)
+;; 2012-12-11 (1.2)
 ;;     no animation when the window is visible but not active
 ;; 2012-12-04 (1.1)
 ;;     set alpha and always on top in slide down (not only with creation)
@@ -130,7 +130,7 @@ IniRead, ExecPath,        QuahkeConsole.ini, Misc, ExecPath, C:\cygwin\bin
 IniRead, NoConfigMintty,  QuahkeConsole.ini, Misc, NoConfigMintty, False
 ;;
 ;; version number
-SoftwareVersion := "1.0"
+SoftwareVersion := "1.2"
 ;;
 ;; Precision of pixel move for animation of the window
 TimerMovePrecision := 20
@@ -197,19 +197,31 @@ Return
 ;;; SHORTCUT
 ;; Launch console if necessary; hide/show on Win+` or F1
 F1::GoSub, ShowHide
-;; reload ini or script (use by test script)
-!^F1::Reload
 ;;
 ;; move by word (right)
 #IfWinActive QuahkeConsole
 ^Right::
-  Send {Escape}f
+  ;; bind only when window console exist
+  If TerminalHWND != 1
+  {
+    IfWinActive ahk_id %TerminalHWND%
+    {
+      Send {Escape}f
+    }
+  }
 Return
 ;;
 ;; move by word (left)
 #IfWinActive QuahkeConsole
 ^Left::
-  Send {Escape}b
+  ;; bind only when window console exist
+  If TerminalHWND != 1
+  {
+    IfWinActive ahk_id %TerminalHWND%
+    {
+      Send {Escape}b
+    }
+  }
 Return
 
 ;

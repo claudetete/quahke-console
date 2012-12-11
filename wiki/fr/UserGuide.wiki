@@ -2,12 +2,12 @@
 #labels Featured,Phase-Deploy,console,terminal,rxvt,cygwin,cmd,quake,tilda,guake,yakuake
 
 = Installation =
- * Télécharger la dernière version de QuahkeConsole http://code.google.com/p/quahke-console/downloads/list
+ * TÃ©lÃ©charger la derniÃ¨re version de QuahkeConsole http://code.google.com/p/quahke-console/downloads/list
  * Dezipper
 
 = Utilisation =
- * Lancer QuahkeConsole.exe et démarrer avec le raccourci F1
- * Une nouvelle icone est placée dans la barre système
+ * Lancer QuahkeConsole.exe et dÃ©marrer avec le raccourci F1
+ * Une nouvelle icone est placÃ©e dans la barre systÃ¨me
  * Clic droit pour afficher le menu
 {{{
   About
@@ -18,53 +18,53 @@
   Pause Script
   Exit
 }}}
- * Bien sûr si vous voulez utiliser rxvt ou mintty, vous devez installer [http://www.cygwin.com Cygwin] avec le paquet rxvt ou mintty (exemple de réglages dans [UserGuide#rxvt]).
+ * Bien sÃ»r si vous voulez utiliser rxvt ou mintty, vous devez installer [http://www.cygwin.com Cygwin] avec le paquet rxvt ou mintty (exemple de rÃ©glages dans [UserGuide#rxvt]).
 
 = Configuration =
- * Créer le fichier .ini (valeurs par défaut sont pour Windows XP, cmd et police 8x12)
- * Éditer le:
+ * CrÃ©er le fichier .ini (valeurs par dÃ©faut sont pour Windows XP, cmd et police 8x12)
+ * Ã‰diter le:
 
 === Section Position ===
-|| *Nom* || *A propos* || *Défaut* ||
-|| OffsetLeft || Offset gauche pour cacher la décoration de la fenêtre de la console || _6_ ||
-|| OffsetRight || Offset droit pour cacher la décoration de la fenêtre de la console || _25_ ||
-|| OffsetTop || Offset haut pour cacher la décoration de la fenêtre de la console || _6_ ||
-|| OffsetBottom || Offset bas pour cacher la décoration de la fenêtre de la console || _6_ ||
+|| *Nom* || *A propos* || *DÃ©faut* ||
+|| OffsetLeft || Offset gauche pour cacher la dÃ©coration de la fenÃªtre de la console || _6_ ||
+|| OffsetRight || Offset droit pour cacher la dÃ©coration de la fenÃªtre de la console || _25_ ||
+|| OffsetTop || Offset haut pour cacher la dÃ©coration de la fenÃªtre de la console || _6_ ||
+|| OffsetBottom || Offset bas pour cacher la dÃ©coration de la fenÃªtre de la console || _6_ ||
 
 === Section Size ===
-|| *Nom* || *A propos* || *Défaut* ||
-|| SizePercentX || Largeur de la console en pourcentage de l'écran || _100_ ||
-|| SizePercentY || Hauteur de la console en pourcentage de l'écran || _30_ ||
+|| *Nom* || *A propos* || *DÃ©faut* ||
+|| SizePercentX || Largeur de la console en pourcentage de l'Ã©cran || _100_ ||
+|| SizePercentY || Hauteur de la console en pourcentage de l'Ã©cran || _30_ ||
 
 === Section Font ===
-|| *Nom* || *A propos* || *Défaut* ||
-|| TerminalFont || Police d'écriture utilisée dans la console (seulement rxvt or mintty) || _Courier-12_ ||
-|| CharacterSizeX || Largeur de la police d'écriture utilisée (en pixels) || _8_ ||
-|| CharacterSizeY || Hauteur de la police d'écriture utilisée (en pixels) || _13_ ||
+|| *Nom* || *A propos* || *DÃ©faut* ||
+|| TerminalFont || Police d'Ã©criture utilisÃ©e dans la console (seulement rxvt or mintty) || _Courier-12_ ||
+|| CharacterSizeX || Largeur de la police d'Ã©criture utilisÃ©e (en pixels) || _8_ ||
+|| CharacterSizeY || Hauteur de la police d'Ã©criture utilisÃ©e (en pixels) || _13_ ||
 
 === Section Terminal ===
-|| *Nom* || *A propos* || *Défaut* ||
+|| *Nom* || *A propos* || *DÃ©faut* ||
 || *TerminalType* || Type de terminal que vous voulez, seulement *rxvt*, *cmd* ou *mintty* || _cmd_ ||
-|| TerminalTitle || Titre de la fenêtre de la console || _QuahkeConsole_ ||
+|| TerminalTitle || Titre de la fenÃªtre de la console || _QuahkeConsole_ ||
 
 === Section Display ===
-|| *Nom* || *A propos* || *Défaut* ||
-|| TerminalAlpha || Valeur de transparence de la fenêtre de la console en pourcentage (only rxvt) || _80_ ||
-|| TerminalForeground || Couleur de la police d'écriture (seulement rxvt) || _white_ ||
-|| TerminalBackground || Couleur de fond de la fenêtre de la console (seulement rxvt) || _black_ ||
-|| TerminalSlideTime || Durée pour afficher ou cacher la fenêtre de la console (en ms) || _250_ ||
+|| *Nom* || *A propos* || *DÃ©faut* ||
+|| TerminalAlpha || Valeur de transparence de la fenÃªtre de la console en pourcentage (only rxvt) || _80_ ||
+|| TerminalForeground || Couleur de la police d'Ã©criture (seulement rxvt) || _white_ ||
+|| TerminalBackground || Couleur de fond de la fenÃªtre de la console (seulement rxvt) || _black_ ||
+|| TerminalSlideTime || DurÃ©e pour afficher ou cacher la fenÃªtre de la console (en ms) || _250_ ||
 || TerminalSlideTau || Constante de temps pour configurer l'animation (filtre du premier ordre) (en ms) || _70_ ||
-|| TerminalAlwaysOnTop || Booléen pour avoir la fenêtre de la console toujours au dessus des autres || _True_ ||
+|| TerminalAlwaysOnTop || BoolÃ©en pour avoir la fenÃªtre de la console toujours au dessus des autres || _True_ ||
 
 === Section Misc ===
-|| *Nom* || *A propos* || *Défaut* ||
+|| *Nom* || *A propos* || *DÃ©faut* ||
 || TerminalShell || Shell que vous voulez utiliser (seulement rxvt) || _bash_ ||
-|| TerminalHistory || Nombre de ligne garder en mémoire par la console (seulement rxvt) || _5000_ ||
-|| ExecPath || Chemin de l'éxecutable (seulement rxvt et mintty) || _C:\cygwin\bin_ ||
+|| TerminalHistory || Nombre de ligne garder en mÃ©moire par la console (seulement rxvt) || _5000_ ||
+|| ExecPath || Chemin de l'Ã©xecutable (seulement rxvt et mintty) || _C:\cygwin\bin_ ||
 || NoConfigMintty || Ne pas utiliser de fichier de configuration temporaire pour mintty mais votre .minttyrc || False ||
 
 = rxvt =
-Exemple de réglage pour rxvt:
+Exemple de rÃ©glage pour rxvt:
  * dans le fichier QuahkeConsole.ini :
 {{{
 [Position]
@@ -135,4 +135,4 @@ NoConfigMintty=False
 }}}
 
 = mintty =
-Pour utiliser votre fichier de configuration (~/.minttyrc), mettre *NoConfigMintty* à *True* dans la section *Misc*, les réglages de la transparence et de la police dans QuahkeConsole.ini ne seront plus pris en compte.
+Pour utiliser votre fichier de configuration (~/.minttyrc), mettre *NoConfigMintty* Ã  *True* dans la section *Misc*, les rÃ©glages de la transparence et de la police dans QuahkeConsole.ini ne seront plus pris en compte.

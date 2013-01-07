@@ -1,7 +1,7 @@
-﻿;;; QuahkeConsole.ahk --- Open a Quake-like terminal (tilda, guake or yakuake)
-;;;                       but in MS Windows
+﻿;;; QuahkeConsole.ahk --- Open a Quake-like terminal like tilda, guake or
+;;;                       yakuake but in MS Windows
 
-;; Copyright (c) 2011-2012 Claude Tete
+;; Copyright (c) 2011-2013 Claude Tete
 ;;
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -18,21 +18,25 @@
 ;;
 
 ;; Author: Claude Tete  <claude.tete@gmail.com>
-;; Version: 1.2
+;; Version: 1.3
 ;; Created: February 2011
-;; Last-Updated: December 2012
+;; Last-Updated: January 2013
 
 ;;; Commentary:
-;; Based on (htanks to Wojciech 'KosciaK' Pietrzok <kosciak1@gmail.com>):
+;; Based on (thanks to Wojciech 'KosciaK' Pietrzok <kosciak1@gmail.com>):
 ;;  Opens Console in a Quake style (at the top of the screen using F1)
 ;;  http://code.google.com/p/kosciak-autohotkey/source/browse/trunk/TildaConsole
 ;;  /TildaConsole.ahk?r=18
 ;;
 ;;  Default settings are for cmd with default font (8x12) on Windows XP
+;;  see http://code.google.com/p/quahke-console/wiki/UserGuide for other setting
 ;;
 ;;  Bug: the decoration cannot be hidden with aero on 7 or Vista.
+;;       cannot be repoduce with aero on a Win 7 in VirtualBox
 
 ;;; Change Log:
+;; 2013-01-07 (1.3)
+;;     shortcut can be specified + update gui + fix position when unfocus
 ;; 2012-12-11 (1.2)
 ;;     no animation when the window is visible but not active
 ;; 2012-12-04 (1.1)
@@ -64,6 +68,7 @@
 ;;                              Down%22%2c-Quake-style-command-prompt-
 ;;                              for-Window/
 
+;;; Code:
 ;
 ;;
 ;;; ENVIRONMENT
@@ -128,9 +133,11 @@ IniRead, TerminalHistory, QuahkeConsole.ini, Misc, TerminalHistory, 5000
 IniRead, ExecPath,        QuahkeConsole.ini, Misc, ExecPath, C:\cygwin\bin
 ;; take default config from you config file (~/.minttyrc)
 IniRead, NoConfigMintty,  QuahkeConsole.ini, Misc, NoConfigMintty, False
+;; shortcut for show/hide window console
+IniRead, ShortcutShowHide,  QuahkeConsole.ini, Misc, ShortcutShowHide, F1
 ;;
 ;; version number
-SoftwareVersion := "1.2"
+SoftwareVersion = 1.3
 ;;
 ;; Precision of pixel move for animation of the window
 TimerMovePrecision := 20
@@ -144,6 +151,13 @@ ScreenSizeY := 0
 ;; Console window position
 PosX := 0
 PosY := 0
+
+;
+;;
+;;; SHORTCUT
+;; Launch console if necessary and hide/show
+;; (need to be before menu and icon)
+HotKey, %ShortcutShowHide%, ShowHide
 
 ;
 ;;
@@ -162,6 +176,8 @@ Menu, tray, NoStandard
 Menu, tray, add, About, MenuAbout
 ;; Creates a separator line.
 Menu, tray, add
+;; Add the item Shortcuts in the menu
+Menu, tray, add, Set shortcut, MenuSetShortcut
 ;; Add the item Reload in the menu
 Menu, tray, add, Reload .ini file, MenuReload
 ;; Add the item Edit ini in the menu
@@ -173,30 +189,11 @@ Menu, tray, add
 ;; add the standard menu
 Menu, tray, Standard
 return
-;;
-;; handler of the item about
-MenuAbout:
-  Gui, 2:Add, Text, 0x1, % "QuahkeConsole`nVersion " . SoftwareVersion
-  Gui, 2:Show, AutoSize, About QuahkeConsole
-Return
-;;
-;;   handler for the about window
-2GuiClose:
-2GuiEscape:
-  ;; destroy the window without saving anything
-  Gui, Destroy
-Return
-;;
-;;   handler of the item Reload .ini
-MenuReload:
-  Reload
-Return
+
 
 ;
 ;;
-;;; SHORTCUT
-;; Launch console if necessary; hide/show on Win+` or F1
-F1::GoSub, ShowHide
+;;; BINDING
 ;;
 ;; move by word (right)
 #IfWinActive QuahkeConsole
@@ -223,10 +220,110 @@ Return
     }
   }
 Return
+#IfWinActive
+
+;
+;;
+;;; MENU HANDLER
+;;
+;;; handler of the item about
+MenuAbout:
+  Gui, About_:Margin, 30, 10
+  Gui, About_:Add, Text, 0x1, % "QuahkeConsole`nVersion " . SoftwareVersion
+  Gui, About_:Show, AutoSize, About QuahkeConsole
+Return
+;;
+;;; handler for the about window
+About_GuiClose:
+About_GuiEscape:
+  ;; destroy the window without saving anything
+  Gui, Destroy
+Return
+;;
+;;; handler of the item Reload .ini
+MenuReload:
+  Reload
+Return
+;;
+;;; handler for the item shortcut
+MenuSetShortcut:
+  ;; the gui window will be larger
+  Gui, SetShortcut_:Margin, 30, 10
+  ;; when the shortcut contains # (so window key)
+  IfInString, ShortcutShowHide, #
+  {
+    WinKey := 1
+    ;; remove all #
+    StringReplace, Shortcut, ShortcutShowHide, #, , All
+  }
+  else
+  {
+    WinKey := 0
+    Shortcut = %ShortcutShowHide%
+  }
+  ;; add a checkbox for window key, checked depends on WinKey variable
+  Gui, SetShortcut_:Add, CheckBox, Checked%WinKey% vWindowKey, Windows + ...
+  ;; add a edit area to enter hotkey
+  Gui, SetShortcut_:Add, Hotkey, vKey, %Shortcut%
+  ;; add a button "SetShortcut" will go to the sub SetShortcut
+  Gui, SetShortcut_:Add, Button, gSetShortcut, SetShortcut
+  ;; display the gui
+  Gui, SetShortcut_:Show, AutoSize, Escape to cancel
+Return
+;;
+;;: handler for the set shortcut window
+SetShortcut_GuiClose:
+SetShortcut_GuiEscape:
+  ;; destroy the window without saving anything
+  Gui, Destroy
+Return
+;;
+;;; handler for the OK button of set shortcut window
+SetShortcut:
+  ;; get the key and the checkbox for window key
+  GuiControlGet, Key
+  GuiControlGet, WindowKey
+  ;; remove the gui
+  Gui, Destroy
+  ;; when the checkbox window key is checked
+  If WindowKey = 1
+  {
+    ;; prefix shortcut with #
+    Key = % "#" Key
+  }
+  ;; unset previous shortcut
+  HotKey, %ShortcutShowHide%, , Off
+  ;; when key already exist
+  HotKey, %Key%, , UseErrorLevel
+  If ErrorLevel = 0
+  {
+    ;; enable new shortcut
+    HotKey, %Key%, , On
+  }
+  else
+  {
+    ;; when it is not a nonexistent hotkey in the current script
+    If ErrorLevel != 5
+    {
+      MsgBox, 0x10, QuahkeConsole: error, Error: Wrong shortcuts
+    }
+    else
+    {
+      ;; the shortcut do not already exist in the current script
+    }
+  }
+  ;; set new shortcut
+  HotKey, %Key%, ShowHide
+  ;; set new shortcut and write in ini file
+  ShortcutShowHide = %Key%
+  GoSub, MenuCreateSaveIni
+Return
 
 ;
 ;;
 ;;; PROCESSING
+;;
+;;; Show or Hide the Console Window
 ShowHide:
   ;; enable detection of hidden window
   DetectHiddenWindows, on
@@ -262,12 +359,18 @@ ShowHide:
       ;; when console window is visible
       IfWinExist, ahk_id %TerminalHWND%
       {
-         ;; put focus on the console window
-         WinActivate, ahk_id %TerminalHWND%
+        ;;  apply alpha
+        TerminalReplaceWindow(TerminalHWND)
+        ;; to be sure that the console window is at the right place
+        WinMove, ahk_id %TerminalHWND%, , PosX, PosY
+        ;; put focus on the console window
+        WinActivate, ahk_id %TerminalHWND%
       }
       else
       {
-         DetectHiddenWindows, on
+        DetectHiddenWindows, on
+        ;; replace the window an apply alpha
+        TerminalReplaceWindow(TerminalHWND)
         ;; Display the hidden console window
         WindowSlideDown(TerminalHWND)
       }
@@ -299,8 +402,6 @@ ShowHide:
       NbCharacterX := NbCharacterX - 1
       ;; launch rxvt
       Run "%ExecPath%\rxvt.exe" -display :0 -sl %TerminalHistory% -fg %TerminalForeground% -bg %TerminalBackground% -fn %TerminalFont% -fb %TerminalFont% -fm %TerminalFont% -tn rxvt -title %TerminalTitle% -g %NbCharacterX%x%NbCharacterY% -e /bin/%TerminalShell% --login -i, , Hide, WinPID
-      ;; rxvt is long to be launched so wait a little (WinPID = not same pid)
-      ;Sleep, 150
     }
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;; MINTTY
@@ -358,7 +459,7 @@ Scrollbar=none
     else
     {
       ;; show an error dialog box
-      MsgBox, 0x80, QuahkeConsole: error, Error: wrong TerminalType, it must be "cmd" or "rxvt" or "mintty"
+      MsgBox, 0x10, QuahkeConsole: error, Error: wrong TerminalType, it must be "cmd" or "rxvt" or "mintty"
       Exit, -2
     }
 
@@ -408,17 +509,17 @@ WindowSlideUp(WindowHWND)
       ;; when Tau is positive do the smooth animation
       if TerminalSlideTau > 0
       {
-         ;; when time is not over
-         if CurrentTime < TerminalSlideTime
-         {
-           ;; first order filter the position of window (last - 2 is to pass through 99%)
-           WinPosY := PosToStop + Ceil(WinHeight * exp((CurrentTime / TerminalSlideTau) * -1)) - 2
-         }
-         else
-         {
-           ;; time is over set full position
-           WinPosY := PosToStop
-         }
+        ;; when time is not over
+        if CurrentTime < TerminalSlideTime
+        {
+          ;; first order filter the position of window (last - 2 is to pass through 99%)
+          WinPosY := PosToStop + Ceil(WinHeight * exp((CurrentTime / TerminalSlideTau) * -1)) - 2
+        }
+        else
+        {
+          ;; time is over set full position
+          WinPosY := PosToStop
+        }
       }
       else
       {
@@ -450,48 +551,11 @@ Return
 WindowSlideDown(WindowHWND)
 {
   global TerminalSlideTime, PosX, PosY, TimerMovePrecision, TerminalSlideTau
-  global OffsetTop, OffsetLeft, OffsetRight, OffsetBottom, ScreenSizeX, ScreenSizeY
-  global PosX, PosY, NbCharacterX, SizePercentX, TerminalAlpha, TerminalAlwaysOnTop
-  ;;
-  ;; styles to be remove from console window
-  WS_POPUP         := 0x80000000
-  WS_CAPTION       :=   0xC00000
-  WS_THICKFRAME    :=    0x40000
-  WS_EX_CLIENTEDGE :=      0x200
+  global OffsetTop, OffsetLeft, ScreenSizeX, ScreenSizeY
+  global PosX, PosY, NbCharacterX, SizePercentX
 
   ;; move windows immediately
   SetWinDelay, -1
-
-
-  ;; make the window of the terminal with alpha of 200 (only with rxvt)
-  ;; (full transparent = 0, full opaque = 255)
-  Alpha := (TerminalAlpha * 255) / 100
-  WinSet, Transparent, %Alpha%, ahk_id %WindowHWND%
-  ;;
-  ;; console window always on top ? (use by test script)
-  if TerminalAlwaysOnTop = True
-  {
-    ;; set the window to be always in front of other windows
-    Winset, AlwaysOnTop, On, ahk_id %WindowHWND%
-  }
-  else
-  {
-    ;; set the window to be always in front of other windows
-    Winset, AlwaysOnTop, Off, ahk_id %WindowHWND%
-  }
-
-  ;; remove almost all decoration window (do not work with cmd)
-  WinSet, Style, % -(WS_POPUP|WS_CAPTION|WS_THICKFRAME), ahk_id %WindowHWND%
-  WinSet, ExStyle, % -WS_EX_CLIENTEDGE, ahk_id %WindowHWND%
-
-  ;; get window size
-  WinGetPos, , , W, H, ahk_id %WindowHWND%
-  ;; TODO get size window decoration
-  ;; set size of mask to hide window decoration
-  MaskX := W - OffsetRight - OffsetLeft
-  MaskY := H - OffsetBottom - OffsetTop
-  ;; mask window border
-  WinSet, Region, %OffsetLeft%-%OffsetTop% w%MaskX% h%MaskY%, ahk_id %WindowHWND%
 
   ;; get window size
   WinGetPos, , , W, H, ahk_id %WindowHWND%
@@ -535,17 +599,17 @@ WindowSlideDown(WindowHWND)
       ;; when Tau is positive do the smooth animation
       if TerminalSlideTau > 0
       {
-         ;; when time is not over
-         if CurrentTime < TerminalSlideTime
-         {
-           ;; first order filter the position of window (last + 2 is to pass through 99%)
-           WinPosY := PosToStop - Ceil(WinHeight * exp((CurrentTime / TerminalSlideTau) * -1)) + 2
-         }
-         else
-         {
-           ;; time is over set full position
-           WinPosY := PosToStop
-         }
+        ;; when time is not over
+        if CurrentTime < TerminalSlideTime
+        {
+          ;; first order filter the position of window (last + 2 is to pass through 99%)
+          WinPosY := PosToStop - Ceil(WinHeight * exp((CurrentTime / TerminalSlideTau) * -1)) + 2
+        }
+        else
+        {
+          ;; time is over set full position
+          WinPosY := PosToStop
+        }
       }
       else
       {
@@ -569,6 +633,51 @@ WindowSlideDown(WindowHWND)
 
   ;; to be sure that the console window is at the right place
   WinMove, ahk_id %WindowHWND%, , PosX, PosY
+}
+Return
+
+TerminalReplaceWindow(WindowHWND)
+{
+  global TerminalAlpha, TerminalAlwaysOnTop, OffsetTop, OffsetLeft, OffsetBottom, OffsetRight
+  ;;
+  ;; styles to be remove from console window
+  WS_POPUP         := 0x80000000
+  WS_CAPTION       :=   0xC00000
+  WS_THICKFRAME    :=    0x40000
+  WS_EX_CLIENTEDGE :=      0x200
+
+  ;; move windows immediately
+  SetWinDelay, -1
+
+  ;; make the window of the terminal with alpha of 200 (only with rxvt)
+  ;; (full transparent = 0, full opaque = 255)
+  Alpha := (TerminalAlpha * 255) / 100
+  WinSet, Transparent, %Alpha%, ahk_id %WindowHWND%
+  ;;
+  ;; console window always on top ? (use by test script)
+  if TerminalAlwaysOnTop = True
+  {
+    ;; set the window to be always in front of other windows
+    Winset, AlwaysOnTop, On, ahk_id %WindowHWND%
+  }
+  else
+  {
+    ;; set the window to be always in front of other windows
+    Winset, AlwaysOnTop, Off, ahk_id %WindowHWND%
+  }
+
+  ;; remove almost all decoration window (do not work with cmd)
+  WinSet, Style, % -(WS_POPUP|WS_CAPTION|WS_THICKFRAME), ahk_id %WindowHWND%
+  WinSet, ExStyle, % -WS_EX_CLIENTEDGE, ahk_id %WindowHWND%
+
+  ;; get window size
+  WinGetPos, , , W, H, ahk_id %WindowHWND%
+  ;; TODO get size window decoration
+  ;; set size of mask to hide window decoration
+  MaskX := W - OffsetRight - OffsetLeft
+  MaskY := H - OffsetBottom - OffsetTop
+  ;; mask window border
+  WinSet, Region, %OffsetLeft%-%OffsetTop% w%MaskX% h%MaskY%, ahk_id %WindowHWND%
 }
 Return
 
@@ -624,7 +733,7 @@ MenuEditIni:
   Run, QuahkeConsole.ini, , Max UseErrorLevel
   ;; when error to launch
   if ErrorLevel = ERROR
-    MsgBox cannot access QuahkeConsole.ini: No such file or directory.
+    MsgBox, 0x10, QuahkeConsole, cannot access QuahkeConsole.ini: No such file or directory.`n(Use before "Create/Save .ini file")
 Return
 
 ;
@@ -654,8 +763,11 @@ MenuCreateSaveIni:
   IniWrite, %TerminalSlideTau%,    QuahkeConsole.ini, Display, TerminalSlideTau
   IniWrite, %TerminalAlwaysOnTop%, QuahkeConsole.ini, Display, TerminalAlwaysOnTop
   ;; Section Misc
-  IniWrite, %TerminalShell%,   QuahkeConsole.ini, Misc, TerminalShell
-  IniWrite, %TerminalHistory%, QuahkeConsole.ini, Misc, TerminalHistory
-  IniWrite, %ExecPath%,        QuahkeConsole.ini, Misc, ExecPath
-  IniWrite, %NoConfigMintty%,  QuahkeConsole.ini, Misc, NoConfigMintty
+  IniWrite, %TerminalShell%,    QuahkeConsole.ini, Misc, TerminalShell
+  IniWrite, %TerminalHistory%,  QuahkeConsole.ini, Misc, TerminalHistory
+  IniWrite, %ExecPath%,         QuahkeConsole.ini, Misc, ExecPath
+  IniWrite, %NoConfigMintty%,   QuahkeConsole.ini, Misc, NoConfigMintty
+  IniWrite, %ShortcutShowHide%, QuahkeConsole.ini, Misc, ShortcutShowHide
+  ;; display a traytip to indicate file save
+  TrayTip, QuahkeConsole, QuahkeConsole.ini file saved., 5, 1
 Return

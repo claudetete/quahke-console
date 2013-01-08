@@ -22,6 +22,9 @@ TestMinTTY = True
 ScreenWidth := A_ScreenWidth
 SysGet, ScreenHeight, 62
 
+;; useful for win7 cmd
+SetTitleMatchMode, 2
+
 MainTitle = Test QuahkeConsole
 
 ;;------------------------------------------------------------------------------
@@ -121,9 +124,10 @@ RunTestCase(TestText, TWidth, THeight, TTime, TAlpha, TFont)
   CopySettingFile(TWidth, THeight, TTime, TAlpha, TFont)
   ;; run script to test
   Run, "C:\Program Files\AutoHotkey\AutoHotkey.exe" "..\QuahkeConsole.ahk", , , ScriptPID
+  Sleep, 500
   ;; open the console window
   SendInput, {F1}
-  Sleep, 500
+  Sleep, 1500
   WinWait, QuahkeConsole
   ;; display message for the tester
   MsgBox, 3, %MainTitle%, %TestText%:`nA Window of %TConsole% with witdh of %TWidth%`% and height of %THeight%`% show in %TTime% ms and transparency of %TAlpha%`%?, 60
@@ -160,10 +164,10 @@ CopySettingFile(TWidth, THeight, TTime, TAlpha, TFont)
   {
     if A_OSVersion in WIN_7,WIN_VISTA
     {
-      TOffsetTop    := 25
-      TOffsetLeft   := 6
-      TOffsetRight  := 6
-      TOffsetBottom := 6
+      TOffsetTop    := 0
+      TOffsetLeft   := 0
+      TOffsetRight  := 19
+      TOffsetBottom := 42
     }
     else
     {
@@ -175,10 +179,20 @@ CopySettingFile(TWidth, THeight, TTime, TAlpha, TFont)
   }
   else if TConsole = rxvt
   {
-    TOffsetTop    := 0
-    TOffsetLeft   := 0
-    TOffsetRight  := 0
-    TOffsetBottom := 0
+    if A_OSVersion in WIN_7,WIN_VISTA
+    {
+      TOffsetTop    := 0
+      TOffsetLeft   := 0
+      TOffsetRight  := 19
+      TOffsetBottom := 40
+    }
+    else
+    {
+      TOffsetTop    := 0
+      TOffsetLeft   := 0
+      TOffsetRight  := 0
+      TOffsetBottom := 0
+    }
   }
   else if TConsole = mintty
   {

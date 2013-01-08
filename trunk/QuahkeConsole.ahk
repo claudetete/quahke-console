@@ -31,8 +31,7 @@
 ;;  Default settings are for cmd with default font (8x12) on Windows XP
 ;;  see http://code.google.com/p/quahke-console/wiki/UserGuide for other setting
 ;;
-;;  Bug: the decoration cannot be hidden with aero on 7 or Vista.
-;;       cannot be repoduce with aero on a Win 7 in VirtualBox
+;;  may do not function with bash or other shell which modify the terminal title
 
 ;;; Change Log:
 ;; 2013-01-07 (1.3)
@@ -359,8 +358,8 @@ ShowHide:
       ;; when console window is visible
       IfWinExist, ahk_id %TerminalHWND%
       {
-        ;;  apply alpha
-        TerminalReplaceWindow(TerminalHWND)
+        ;; remove window decoration and apply alpha and always on top
+        WindowDesign(TerminalHWND)
         ;; to be sure that the console window is at the right place
         WinMove, ahk_id %TerminalHWND%, , PosX, PosY
         ;; put focus on the console window
@@ -369,8 +368,8 @@ ShowHide:
       else
       {
         DetectHiddenWindows, on
-        ;; replace the window an apply alpha
-        TerminalReplaceWindow(TerminalHWND)
+        ;; remove window decoration and apply alpha and always on top
+        WindowDesign(TerminalHWND)
         ;; Display the hidden console window
         WindowSlideDown(TerminalHWND)
       }
@@ -451,7 +450,7 @@ Scrollbar=none
       ;; to view all character
       NbCharacterX := NbCharacterX - 1
       ;; launch mintty
-      Run "%ExecPath%\mintty.exe" --title %TerminalTitle% %ConfigMintty% --size %NbCharacterX%`,%NbCharacterY% --window hide --exec /bin/%TerminalShell% --login -i, , Hide, WinPID
+      Run "%ExecPath%\mintty.exe" --title %TerminalTitle% %ConfigMintty% --size %NbCharacterX%`,%NbCharacterY% --exec /bin/%TerminalShell% --login -i, , Hide, WinPID
     }
     ;;;;;;;;;;;;;
     ;; Unknown
@@ -466,9 +465,13 @@ Scrollbar=none
     ;; wait instance of console window
     WinWait, ahk_pid %WinPID%
     ;;
+    Sleep, 250
+    ;;
     ;; get the unique id of the console window
     TerminalHWND := TerminalWindowExist()
 
+    ;; remove window decoration and apply alpha and always on top
+    WindowDesign(TerminalHWND)
     ;; show the window by the top
     WindowSlideDown(TerminalHWND)
   }
@@ -477,7 +480,6 @@ Scrollbar=none
   DetectHiddenWindows, off
 Return
 
-;
 ;;
 ;;; Slide a Windows outside the screen by the top (to hide it)
 WindowSlideUp(WindowHWND)
@@ -499,7 +501,9 @@ WindowSlideUp(WindowHWND)
     PosToStop := PosY - WinHeight
 
     ;; compute move precision to set time limit
-    MovePrecision := Round((TimerMovePrecision * WinHeight) / TerminalSlideTime, 0)
+    MovePrecision := (TimerMovePrecision * WinHeight) / TerminalSlideTime
+    ;; compute coef for first order filter
+    FirstOrderCoef := 1 - exp(-MovePrecision / TerminalSlideTau)
     ;; init time value
     CurrentTime := 0
 
@@ -513,7 +517,7 @@ WindowSlideUp(WindowHWND)
         if CurrentTime < TerminalSlideTime
         {
           ;; first order filter the position of window (last - 2 is to pass through 99%)
-          WinPosY := PosToStop + Ceil(WinHeight * exp((CurrentTime / TerminalSlideTau) * -1)) - 2
+          WinPosY := WinPosY + ((PosToStop - WinPosY) * FirstOrderCoef) - 2
         }
         else
         {
@@ -545,7 +549,6 @@ WindowSlideUp(WindowHWND)
 }
 Return
 
-;
 ;;
 ;;; Slide a Windows inside the screen by the top (to show it)
 WindowSlideDown(WindowHWND)
@@ -589,7 +592,9 @@ WindowSlideDown(WindowHWND)
     PosToStop := PosY
 
     ;; compute move precision to set time limit
-    MovePrecision := Round((TimerMovePrecision * WinHeight) / TerminalSlideTime, 0)
+    MovePrecision := (TimerMovePrecision * WinHeight) / TerminalSlideTime
+    ;; compute coef for first order filter
+    FirstOrderCoef := 1 - exp(-MovePrecision / TerminalSlideTau)
     ;; init time value
     CurrentTime := 0
 
@@ -603,7 +608,7 @@ WindowSlideDown(WindowHWND)
         if CurrentTime < TerminalSlideTime
         {
           ;; first order filter the position of window (last + 2 is to pass through 99%)
-          WinPosY := PosToStop - Ceil(WinHeight * exp((CurrentTime / TerminalSlideTau) * -1)) + 2
+          WinPosY := WinPosY + ((PosToStop - WinPosY) * FirstOrderCoef) + 2
         }
         else
         {
@@ -636,7 +641,9 @@ WindowSlideDown(WindowHWND)
 }
 Return
 
-TerminalReplaceWindow(WindowHWND)
+;;
+;;; apply alpha, always on top and remove decoration of console window
+WindowDesign(WindowHWND)
 {
   global TerminalAlpha, TerminalAlwaysOnTop, OffsetTop, OffsetLeft, OffsetBottom, OffsetRight
   ;;
@@ -681,7 +688,6 @@ TerminalReplaceWindow(WindowHWND)
 }
 Return
 
-;
 ;;
 ;;; Return the unique ID of the console windows if it exists
 TerminalWindowExist()
@@ -725,7 +731,6 @@ TerminalWindowExist()
 }
 Return
 
-;
 ;;
 ;;; Edit a ini file
 MenuEditIni:
@@ -736,7 +741,6 @@ MenuEditIni:
     MsgBox, 0x10, QuahkeConsole, cannot access QuahkeConsole.ini: No such file or directory.`n(Use before "Create/Save .ini file")
 Return
 
-;
 ;;
 ;;; Save all settings in a ini file
 MenuCreateSaveIni:
@@ -768,6 +772,7 @@ MenuCreateSaveIni:
   IniWrite, %ExecPath%,         QuahkeConsole.ini, Misc, ExecPath
   IniWrite, %NoConfigMintty%,   QuahkeConsole.ini, Misc, NoConfigMintty
   IniWrite, %ShortcutShowHide%, QuahkeConsole.ini, Misc, ShortcutShowHide
+  ;;
   ;; display a traytip to indicate file save
   TrayTip, QuahkeConsole, QuahkeConsole.ini file saved., 5, 1
 Return

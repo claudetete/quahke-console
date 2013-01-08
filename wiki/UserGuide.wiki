@@ -6,11 +6,12 @@
  * Unzip
 
 = Use =
- * Run QuahkeConsole.exe and start with F1 shortcut
+ * Run QuahkeConsole.exe and start with F1 shortcut (can be modify)
  * a new icon is placed in system tray
  * right click to show the menu
 {{{
   About
+  Set shortcut
   Reload .ini file
   Edit .ini file
   Create/Save .ini file
@@ -22,14 +23,15 @@
 
 = Configuration =
  * Create the .ini file (default value are for Windows XP, cmd and 8x12 font)
+ * Character size require to restart the console, other cosmetic settings can be set on a running console
  * Edit it
 
 === Section Position ===
-|| *Name* || *About* || *Default* ||
-|| OffsetLeft || Offset to hide console window decoration by the left || _6_ ||
-|| OffsetRight || Offset to hide console window decoration by the right || _25_ ||
-|| OffsetTop || Offset to hide console window decoration by the top || _6_ ||
-|| OffsetBottom || Offset to hide console window decoration by the bottom || _6_ ||
+|| *Name*        || *About*                                                || *Default* || *cmd in Win7 without Aero* || *cmd in Win7 with Aero* || *rxvt in Win7 with Aero* ||
+|| OffsetLeft    || Offset to hide console window decoration by the left   || _6_       || _0_                        || _0_                     || _0_                      ||
+|| OffsetRight   || Offset to hide console window decoration by the right  || _25_      || _20_                       || _19_                    || _19_                     ||
+|| OffsetTop     || Offset to hide console window decoration by the top    || _6_       || _0_                        || _0_                     || _0_                      ||
+|| OffsetBottom  || Offset to hide console window decoration by the bottom || _6_       || _40_                       || _42_                    || _40_                     ||
 
 === Section Size ===
 || *Name* || *About* || *Default* ||
@@ -53,7 +55,7 @@
 || TerminalForeground || Color of the foreground of the terminal (only rxvt) || _white_ ||
 || TerminalBackground || Color of the background of the terminal (only rxvt) || _black_ ||
 || TerminalSlideTime || Time to show or hide the console window (in ms) || _250_ ||
-|| TerminalSlideTau || Constant time to configure the animation (first order filter) (in ms) || _70_ ||
+|| TerminalSlideTau || Constant time to configure the animation (first order filter) (in ms (~ SlideTime / 5)) || _70_ ||
 || TerminalAlwaysOnTop || Boolean to set console window always on top or not || _True_ ||
 
 === Section Misc ===
@@ -64,7 +66,7 @@
 || NoConfigMintty || Take mintty configuration from your .minttyrc and not from QuahkeConsole.ini || False ||
 
 = rxvt =
-Example of settings for rxvt:
+Example of settings for rxvt in Win XP:
  * In the QuahkeConsole.ini file:
 {{{
 [Position]

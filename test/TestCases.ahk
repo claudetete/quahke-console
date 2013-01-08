@@ -130,7 +130,7 @@ RunTestCase(TestText, TWidth, THeight, TTime, TAlpha, TFont)
   Sleep, 1500
   WinWait, QuahkeConsole
   ;; display message for the tester
-  MsgBox, 3, %MainTitle%, %TestText%:`nA Window of %TConsole% with witdh of %TWidth%`% and height of %THeight%`% show in %TTime% ms and transparency of %TAlpha%`%?, 60
+  MsgBox, 3, %MainTitle%, %TestText%:`nA Window of %TConsole% with width of %TWidth%`% and height of %THeight%`% show in %TTime% ms and transparency of %TAlpha%`%?, 60
   ;; close console window
   WinClose, QuahkeConsole
   WinClose, ahk_pid %ScriptPID%

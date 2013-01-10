@@ -18,7 +18,7 @@
 ;;
 
 ;; Author: Claude Tete  <claude.tete@gmail.com>
-;; Version: 1.3
+;; Version: 1.4
 ;; Created: February 2011
 ;; Last-Updated: January 2013
 
@@ -119,7 +119,7 @@ else
 GoSub, LoadIniFile
 ;;
 ;; version number
-SoftwareVersion = 1.3
+SoftwareVersion = 1.4
 ;;
 ;; Precision of pixel move for animation of the window
 TimerMovePrecision := 20
@@ -633,13 +633,13 @@ MenuOptions:
   ;;
   Gui, Options_:Add, Text, xp+15 yp+15 w63 Section, Horizontal (*):
   Gui, Options_:Add, Slider, ys w400 h20 Range1-100 TickInterval25 AltSubmit gSetNumSizePercentX vSlideSizePercentX, %SizePercentX%
-  Gui, Options_:Add, Edit, ys xp+402 w40, %SizePercentX%
+  Gui, Options_:Add, Edit, ys xp+402 w40 gSetEditSlideSizePercentX vNumEditSizePercentX, %SizePercentX%
   Gui, Options_:Add, UpDown, Range1-100 gSetSlideSizePercentX vNumSizePercentX, %SizePercentX%
   Gui, Options_:Add, Text, ys xp+42, `%
   ;;
   Gui, Options_:Add, Text, xs w63 Section, Vertical (*):
   Gui, Options_:Add, Slider, ys w400 h20 Range1-100 TickInterval25 AltSubmit gSetNumSizePercentY vSlideSizePercentY, %SizePercentY%
-  Gui, Options_:Add, Edit, ys xp+402 w40, %SizePercentY%
+  Gui, Options_:Add, Edit, ys xp+402 w40 gSetEditSlideSizePercentY vNumEditSizePercentY, %SizePercentY%
   Gui, Options_:Add, UpDown, Range1-100 gSetSlideSizePercentY vNumSizePercentY, %SizePercentY%
   Gui, Options_:Add, Text, ys xp+42, `%
 
@@ -751,8 +751,16 @@ Return
 SetSlideSizePercentX:
   GuiControl, , msctls_trackbar321, %NumSizePercentX%
 Return
+SetEditSlideSizePercentX:
+  GuiControlGet, NumEditSizePercentX
+  GuiControl, , msctls_trackbar321, %NumEditSizePercentX%
+Return
 SetSlideSizePercentY:
   GuiControl, , msctls_trackbar322, %NumSizePercentY%
+Return
+SetEditSlideSizePercentY:
+  GuiControlGet, NumEditSizePercentY
+  GuiControl, , msctls_trackbar322, %NumEditSizePercentY%
 Return
 ;;
 ;;: handler for the set shortcut window

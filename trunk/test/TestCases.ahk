@@ -3,12 +3,13 @@
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
-
 ;;------------------------------------------------------------------------------
 ;; !!! NEED TO BE CHANGED FOR TESTS !!!
 ;;------------------------------------------------------------------------------
 TExecPath = D:\cygwin\bin
 TShell = zsh
+FileCopy, ../QuahkeConsole.*, QuahkeConsole.*, 1
+
 
 TestCMD    = True
 TestRXVT   = True
@@ -123,17 +124,19 @@ RunTestCase(TestText, TWidth, THeight, TTime, TAlpha, TFont)
   ;; prepare setting file
   CopySettingFile(TWidth, THeight, TTime, TAlpha, TFont)
   ;; run script to test
-  Run, "C:\Program Files\AutoHotkey\AutoHotkey.exe" "..\QuahkeConsole.ahk", , , ScriptPID
+  Run, "C:\Program Files\AutoHotkey\AutoHotkey.exe" "QuahkeConsole.ahk" "QuahkeTest.ini", , , ScriptPID
   Sleep, 500
   ;; open the console window
   SendInput, {F1}
-  Sleep, 1500
-  WinWait, QuahkeConsole
+  ;; add 250 ms to the animation duration
+  timer := TTime + 250
+  Sleep, %timer%
+  WinWait, QuahkeConsole ahk_exe %TConsole%.exe
   ;; display message for the tester
   MsgBox, 3, %MainTitle%, %TestText%:`nA Window of %TConsole% with width of %TWidth%`% and height of %THeight%`% show in %TTime% ms and transparency of %TAlpha%`%?, 60
   ;; close console window
-  WinClose, QuahkeConsole
-  WinClose, ahk_pid %ScriptPID%
+  WinKill, QuahkeConsole ahk_exe %TConsole%.exe
+  WinKill, ahk_pid %ScriptPID%
   ;; when Cancel or No, it will exit the test script
   IfMsgBox, No
   {
@@ -210,7 +213,7 @@ CopySettingFile(TWidth, THeight, TTime, TAlpha, TFont)
   }
 
   ;; remove old setting file
-  FileDelete, ..\QuahkeConsole.ini
+  FileDelete, QuahkeTest.ini
   ;; write new file
   FileAppend,
 ( ;; file start here...
@@ -240,6 +243,7 @@ TerminalAlwaysOnTop=False
 TerminalShell=%TShell%
 TerminalHistory=10000
 ExecPath=%TExecPath%
-), ..\QuahkeConsole.ini ;; ...and end here
+ShortcutShowHide=F1
+), QuahkeTest.ini ;; ...and end here
 }
 Return

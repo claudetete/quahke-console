@@ -34,6 +34,9 @@
 ;;  may do not function with bash or other shell which modify the terminal title
 
 ;;; Change Log:
+;; 2013-01-10 (1.4)
+;;     options in ini file can be modified by gui + ini file can be give by a
+;;     parameter
 ;; 2013-01-07 (1.3)
 ;;     shortcut can be specified + update gui + fix position when unfocus
 ;; 2012-12-11 (1.2)
@@ -81,59 +84,39 @@ SendMode Input
 SetWorkingDir %A_ScriptDir%
 ;; only on instance of this script
 #SingleInstance force
+;; application name use in msgbox, etc
+ApplicationName = QuahkeConsole
+
+;
+;;
+;;; PARAMETERS
+if 0 > 0
+{
+  ;; get first parameter
+  IniFilePath = %1%
+  ;; when file exist
+  IfExist, IniFilePath
+  {
+    ;; get long path instead of short path
+    Loop %IniFilePath%, 1
+      IniFile = %A_LoopFileLongPath%
+  }
+  else
+  {
+    ;; file do not exist
+    IniFile = %IniFilePath%
+  }
+}
+else
+{
+  ;; no parameter
+  IniFile = %ApplicationName%.ini
+}
 
 ;
 ;;
 ;;; SETTING
-;; offset to remove window decoration at left
-IniRead, OffsetLeft,   QuahkeConsole.ini, Position, OffsetLeft, 6
-;; offset to remove window decoration at right
-IniRead, OffsetRight,  QuahkeConsole.ini, Position, OffsetRight, 6
-;; offset to remove window decoration at top
-IniRead, OffsetTop,    QuahkeConsole.ini, Position, OffsetTop, 25
-;; offset to remove window decoration at bottom
-IniRead, OffsetBottom, QuahkeConsole.ini, Position, OffsetBottom, 6
-;;
-;; percent size in X for the terminal window (%)
-IniRead, SizePercentX, QuahkeConsole.ini, Size, SizePercentX, 100
-;; percent size in Y for the terminal window (%)
-IniRead, SizePercentY, QuahkeConsole.ini, Size, SizePercentY, 30
-;;
-;; font in terminal Cygwin/rxvt
-IniRead, TerminalFont,   QuahkeConsole.ini, Font, TerminalFont, Courier-12
-;; Character Size in X
-IniRead, CharacterSizeX, QuahkeConsole.ini, Font, CharacterSizeX, 8
-;; Character Size in Y
-IniRead, CharacterSizeY, QuahkeConsole.ini, Font, CharacterSizeY, 13
-;;
-;; type of terminal MS/cmd or Cygwin/rxvt
-IniRead, TerminalType,  QuahkeConsole.ini, Terminal, TerminalType, cmd
-;; title in terminal MS/cmd Cygwin/rxvt
-IniRead, TerminalTitle, QuahkeConsole.ini, Terminal, TerminalTitle, QuahkeConsole
-;;
-;; Transparence of terminal in percent (invisible (0) to full opaque (100))
-IniRead, TerminalAlpha,       QuahkeConsole.ini, Display, TerminalAlpha, 80
-;; foreground color in terminal Cygwin/rxvt
-IniRead, TerminalForeground,  QuahkeConsole.ini, Display, TerminalForeground, white
-;; background color in terminal Cygwin/rxvt
-IniRead, TerminalBackground,  QuahkeConsole.ini, Display, TerminalBackground, black
-;; time in ms of animation of hide/show console window
-IniRead, TerminalSlideTime,   QuahkeConsole.ini, Display, TerminalSlideTime, 250
-;; time in ms of going to position in animation (Tau~63%, 3Tau~95%, 5Tau~99%)
-IniRead, TerminalSlideTau,    QuahkeConsole.ini, Display, TerminalSlideTau, 70
-;; always on top
-IniRead, TerminalAlwaysOnTop, QuahkeConsole.ini, Display, TerminalAlwaysOnTop, True
-;;
-;; shell in terminal Cygwin/rxvt
-IniRead, TerminalShell,   QuahkeConsole.ini, Misc, TerminalShell, bash
-;; history size in terminal Cygwin/rxvt
-IniRead, TerminalHistory, QuahkeConsole.ini, Misc, TerminalHistory, 5000
-;; path of Cygwin (to run rxvt)
-IniRead, ExecPath,        QuahkeConsole.ini, Misc, ExecPath, C:\cygwin\bin
-;; take default config from you config file (~/.minttyrc)
-IniRead, NoConfigMintty,  QuahkeConsole.ini, Misc, NoConfigMintty, False
-;; shortcut for show/hide window console
-IniRead, ShortcutShowHide,  QuahkeConsole.ini, Misc, ShortcutShowHide, F1
+GoSub, LoadIniFile
 ;;
 ;; version number
 SoftwareVersion = 1.3
@@ -176,7 +159,7 @@ Menu, tray, add, About, MenuAbout
 ;; Creates a separator line.
 Menu, tray, add
 ;; Add the item Shortcuts in the menu
-Menu, tray, add, Set shortcut, MenuSetShortcut
+Menu, tray, add, Options, MenuOptions
 ;; Add the item Reload in the menu
 Menu, tray, add, Reload .ini file, MenuReload
 ;; Add the item Edit ini in the menu
@@ -187,135 +170,6 @@ Menu, tray, add, Create/Save .ini file, MenuCreateSaveIni
 Menu, tray, add
 ;; add the standard menu
 Menu, tray, Standard
-return
-
-
-;
-;;
-;;; BINDING
-;;
-;; move by word (right)
-#IfWinActive QuahkeConsole
-^Right::
-  ;; bind only when window console exist
-  If TerminalHWND != 1
-  {
-    IfWinActive ahk_id %TerminalHWND%
-    {
-      Send {Escape}f
-    }
-  }
-Return
-;;
-;; move by word (left)
-#IfWinActive QuahkeConsole
-^Left::
-  ;; bind only when window console exist
-  If TerminalHWND != 1
-  {
-    IfWinActive ahk_id %TerminalHWND%
-    {
-      Send {Escape}b
-    }
-  }
-Return
-#IfWinActive
-
-;
-;;
-;;; MENU HANDLER
-;;
-;;; handler of the item about
-MenuAbout:
-  Gui, About_:Margin, 30, 10
-  Gui, About_:Add, Text, 0x1, % "QuahkeConsole`nVersion " . SoftwareVersion
-  Gui, About_:Show, AutoSize, About QuahkeConsole
-Return
-;;
-;;; handler for the about window
-About_GuiClose:
-About_GuiEscape:
-  ;; destroy the window without saving anything
-  Gui, Destroy
-Return
-;;
-;;; handler of the item Reload .ini
-MenuReload:
-  Reload
-Return
-;;
-;;; handler for the item shortcut
-MenuSetShortcut:
-  ;; the gui window will be larger
-  Gui, SetShortcut_:Margin, 30, 10
-  ;; when the shortcut contains # (so window key)
-  IfInString, ShortcutShowHide, #
-  {
-    WinKey := 1
-    ;; remove all #
-    StringReplace, Shortcut, ShortcutShowHide, #, , All
-  }
-  else
-  {
-    WinKey := 0
-    Shortcut = %ShortcutShowHide%
-  }
-  ;; add a checkbox for window key, checked depends on WinKey variable
-  Gui, SetShortcut_:Add, CheckBox, Checked%WinKey% vWindowKey, Windows + ...
-  ;; add a edit area to enter hotkey
-  Gui, SetShortcut_:Add, Hotkey, vKey, %Shortcut%
-  ;; add a button "SetShortcut" will go to the sub SetShortcut
-  Gui, SetShortcut_:Add, Button, gSetShortcut, SetShortcut
-  ;; display the gui
-  Gui, SetShortcut_:Show, AutoSize, Escape to cancel
-Return
-;;
-;;: handler for the set shortcut window
-SetShortcut_GuiClose:
-SetShortcut_GuiEscape:
-  ;; destroy the window without saving anything
-  Gui, Destroy
-Return
-;;
-;;; handler for the OK button of set shortcut window
-SetShortcut:
-  ;; get the key and the checkbox for window key
-  GuiControlGet, Key
-  GuiControlGet, WindowKey
-  ;; remove the gui
-  Gui, Destroy
-  ;; when the checkbox window key is checked
-  If WindowKey = 1
-  {
-    ;; prefix shortcut with #
-    Key = % "#" Key
-  }
-  ;; unset previous shortcut
-  HotKey, %ShortcutShowHide%, , Off
-  ;; when key already exist
-  HotKey, %Key%, , UseErrorLevel
-  If ErrorLevel = 0
-  {
-    ;; enable new shortcut
-    HotKey, %Key%, , On
-  }
-  else
-  {
-    ;; when it is not a nonexistent hotkey in the current script
-    If ErrorLevel != 5
-    {
-      MsgBox, 0x10, QuahkeConsole: error, Error: Wrong shortcuts
-    }
-    else
-    {
-      ;; the shortcut do not already exist in the current script
-    }
-  }
-  ;; set new shortcut
-  HotKey, %Key%, ShowHide
-  ;; set new shortcut and write in ini file
-  ShortcutShowHide = %Key%
-  GoSub, MenuCreateSaveIni
 Return
 
 ;
@@ -338,7 +192,7 @@ ShowHide:
   TerminalHWND := TerminalWindowExist()
 
   ;; if a console has been launched
-  If TerminalHWND != -1
+  if TerminalHWND != -1
   {
     ;; if the console window is active
     IfWinActive ahk_id %TerminalHWND%
@@ -458,7 +312,7 @@ Scrollbar=none
     else
     {
       ;; show an error dialog box
-      MsgBox, 0x10, QuahkeConsole: error, Error: wrong TerminalType, it must be "cmd" or "rxvt" or "mintty"
+      MsgBox, 0x10, %ApplicationName%: error, Error: wrong TerminalType, it must be "cmd" or "rxvt" or "mintty"
       Exit, -2
     }
 
@@ -480,6 +334,9 @@ Scrollbar=none
   DetectHiddenWindows, off
 Return
 
+;
+;;
+;;; FUNCTIONS
 ;;
 ;;; Slide a Windows outside the screen by the top (to hide it)
 WindowSlideUp(WindowHWND)
@@ -731,48 +588,444 @@ TerminalWindowExist()
 }
 Return
 
+;
+;;
+;;; MENU HANDLER
+;;
+;;; handler of the item about
+MenuAbout:
+  Gui, About_:Margin, 30, 10
+  Gui, About_:Add, Text, 0x1, % ApplicationName "`nVersion " . SoftwareVersion
+  Gui, About_:Show, AutoSize, About %ApplicationName%
+Return
+;;
+;;; handler for the about window
+About_GuiClose:
+About_GuiEscape:
+  ;; destroy the window without saving anything
+  Gui, Destroy
+Return
+;;
+;;; handler of the item Reload .ini
+MenuReload:
+  GoSub, LoadIniFile
+Return
+
+;;
+;;; handler for the item options
+MenuOptions:
+  ;; CONSOLE
+  Gui, Options_:Add, GroupBox, x8 y3 w550 h45, Console
+  ;;
+  if TerminalType = cmd
+    OptionsType = cmd||rxvt|mintty
+  else if TerminalType = rxvt
+    OptionsType = cmd|rxvt||mintty
+  else if TerminalType = mintty
+    OptionsType = cmd|rxvt|mintty||
+  Gui, Options_:Add, Text, xp+15 yp+15 Section, Type (*):
+  Gui, Options_:Add, DropDownList, ys w70 vTType, %OptionsType%
+  Gui, Options_:Add, Text, ys, Title (*):
+  Gui, Options_:Add, Edit, ys w350 vTTitle, %TerminalTitle%
+
+  ;; SIZE
+  Gui, Options_:Add, GroupBox, x8 w550 h70, Size
+  ;;
+  Gui, Options_:Add, Text, xp+15 yp+15 w63 Section, Horizontal (*):
+  Gui, Options_:Add, Slider, ys w400 h20 Range1-100 TickInterval25 AltSubmit gSetNumSizePercentX vSlideSizePercentX, %SizePercentX%
+  Gui, Options_:Add, Edit, ys xp+402 w40, %SizePercentX%
+  Gui, Options_:Add, UpDown, Range1-100 gSetSlideSizePercentX vNumSizePercentX, %SizePercentX%
+  Gui, Options_:Add, Text, ys xp+42, `%
+  ;;
+  Gui, Options_:Add, Text, xs w63 Section, Vertical (*):
+  Gui, Options_:Add, Slider, ys w400 h20 Range1-100 TickInterval25 AltSubmit gSetNumSizePercentY vSlideSizePercentY, %SizePercentY%
+  Gui, Options_:Add, Edit, ys xp+402 w40, %SizePercentY%
+  Gui, Options_:Add, UpDown, Range1-100 gSetSlideSizePercentY vNumSizePercentY, %SizePercentY%
+  Gui, Options_:Add, Text, ys xp+42, `%
+
+  ;; FONTS
+  Gui, Options_:Add, GroupBox, x8 w550 h70, Fonts
+  ;;
+  Gui, Options_:Add, Text, xp+15 yp+15 w105 Section, Font (not cmd) (*):
+  Gui, Options_:Add, Edit, ys w411 vTFont, %TerminalFont%
+  Gui, Options_:Add, Text, xs w105 Section, Character:    Width (*):
+  Gui, Options_:Add, Edit, ys w40, %CharacterSizeX%
+  Gui, Options_:Add, UpDown, Range1-100 vCSizeX, %CharacterSizeX%
+  Gui, Options_:Add, Text, ys xp+42, pixels              Height (*):
+  Gui, Options_:Add, Edit, ys w40, %CharacterSizeY%
+  Gui, Options_:Add, UpDown, Range1-100 vCSizeY, %CharacterSizeY%
+  Gui, Options_:Add, Text, ys xp+42, pixels
+
+  ;; DECORATION
+  Gui, Options_:Add, GroupBox, x8 w550 h70, Decoration
+  ;;
+  Gui, Options_:Add, Text, xp+15 yp+15 Section, Alpha (not cmd) (*):
+  Gui, Options_:Add, Edit, ys w40, %TerminalAlpha%
+  Gui, Options_:Add, UpDown, Range0-100 vTAlpha, %TerminalAlpha%
+  Gui, Options_:Add, Text, ys xp+42, `%
+  if TerminalAlwaysOnTop = True
+    Gui, Options_:Add, CheckBox, ys xp+40 h20 Checked1 vTAlwaysOnTop, Always On Top
+  else
+    Gui, Options_:Add, CheckBox, ys xp+40 h20 Checked0 vTAlwaysOnTop, Always On Top
+  Gui, Options_:Add, Text, xs Section, Offset mask:       left:
+  Gui, Options_:Add, Edit, ys w40, %OffsetLeft%
+  Gui, Options_:Add, UpDown, Range0-1000 vOLeft, %OffsetLeft%
+  Gui, Options_:Add, Text, ys xp+42, px       top:
+  Gui, Options_:Add, Edit, ys w40, %OffsetTop%
+  Gui, Options_:Add, UpDown, Range0-1000 vOTop, %OffsetTop%
+  Gui, Options_:Add, Text, ys xp+42, px       bottom:
+  Gui, Options_:Add, Edit, ys w40, %OffsetBottom%
+  Gui, Options_:Add, UpDown, Range0-1000 vOBottom, %OffsetBottom%
+  Gui, Options_:Add, Text, ys xp+42, px       right:
+  Gui, Options_:Add, Edit, ys w40, %OffsetRight%
+  Gui, Options_:Add, UpDown, Range0-1000 vORight, %OffsetRight%
+  Gui, Options_:Add, Text, ys xp+42, px
+
+  ;; ANIMATION
+  Gui, Options_:Add, GroupBox, x8 w550 h45, Animation
+  ;;
+  Gui, Options_:Add, Text, xp+15 yp+15 Section, Animation Duration (ms):
+  Gui, Options_:Add, Edit, ys w55, %TerminalSlideTime%
+  Gui, Options_:Add, UpDown, Range0-10000 vTSlideTime, %TerminalSlideTime%
+  Gui, Options_:Add, Text, ys xp+95, Animation Acceleration (tau): (mostly duration / 5)
+  Gui, Options_:Add, Edit, ys w48, %TerminalSlideTau%
+  Gui, Options_:Add, UpDown, Range0-2000 vTSlideTau, %TerminalSlideTau%
+
+  ;; COLOR
+  Gui, Options_:Add, GroupBox, x8 w550 h45, Color (not cmd)
+  ;;
+  Gui, Options_:Add, Text, xp+15 yp+15 Section, Foreground (*):
+  Gui, Options_:Add, Edit, ys w100 vTForeground, %TerminalForeground%
+  Gui, Options_:Add, Text, ys xp+140, Background (*):
+  Gui, Options_:Add, Edit, ys w105 vTBackground, %TerminalBackground%
+
+  ;; SHORTCUT
+  Gui, Options_:Add, GroupBox, x8 w550 h45, Shortcut
+  ;;
+  IfInString, ShortcutShowHide, #
+  {
+    Gui, Options_:Add, CheckBox, xp+15 yp+15 h20 Section Checked1 vWinKey, Windows + ...
+    StringReplace, myShortcut, ShortcutShowHide, #, , All
+  }
+  else
+  {
+    Gui, Options_:Add, CheckBox, xp+15 yp+15 h20 Section Checked0 vWinKey, Windows + ...
+    myShortcut = %ShortcutShowHide%
+  }
+  Gui, Options_:Add, Hotkey, ys w200 vSShowHide, %myShortcut%
+
+  ;; MISC
+  Gui, Options_:Add, GroupBox, x8 w550 h70, Misc (not cmd)
+  ;;
+  Gui, Options_:Add, Text, xp+15 yp+15 Section, Shell (*):
+  Gui, Options_:Add, Edit, ys w100 vTShell, %TerminalShell%
+  Gui, Options_:Add, Text, ys xp+140, History (*):
+  Gui, Options_:Add, Edit, ys w65, %TerminalHistory%
+  Gui, Options_:Add, UpDown, Range0-100000 vTHistory, %TerminalHistory%
+  if NoConfigMintty = True
+    Gui, Options_:Add, CheckBox, ys xp+105 h20 Checked1 vNConfigMintty, Use .minttyrc (*)
+  else
+    Gui, Options_:Add, CheckBox, ys xp+105 h20 Checked0 vNConfigMintty, Use .minttyrc (*)
+  Gui, Options_:Add, Text, xs Section, Cygwin bin path (*):
+  Gui, Options_:Add, Edit, ys w425 vEPath, %ExecPath%
+
+  ;; TEXT
+  Gui, Options_:Add, Text, x8 w550 Center, (*) need to quit the console before modified.
+
+  ;; BUTTON
+  Gui, Options_:Add, Button, w70 x200 Section Default, OK
+  Gui, Options_:Add, Button, w70 ys, Cancel
+  Gui, Options_:Add, CheckBox, ys xp+90 Checked1 vSaveIniFile, Save settings
+
+  ;; display the gui
+  Gui, Options_:Show, AutoSize, %ApplicationName% - Options
+Return
+;;
+;;; handler for slider and updown size
+SetNumSizePercentX:
+  GuiControl, Text, Edit2, %SlideSizePercentX%
+Return
+SetNumSizePercentY:
+  GuiControl, Text, Edit3, %SlideSizePercentY%
+Return
+SetSlideSizePercentX:
+  GuiControl, , msctls_trackbar321, %NumSizePercentX%
+Return
+SetSlideSizePercentY:
+  GuiControl, , msctls_trackbar322, %NumSizePercentY%
+Return
+;;
+;;: handler for the set shortcut window
+Options_GuiClose:
+Options_GuiEscape:
+Options_ButtonCancel:
+  ;; destroy the window without saving anything
+  Gui, Destroy
+Return
+;;
+;;; handler for the OK button of set shortcut window
+Options_ButtonOK:
+  ;; get the variable from the gui options
+  GuiControlGet, TType
+  GuiControlGet, TTitle
+  GuiControlGet, NumSizePercentX
+  GuiControlGet, NumSizePercentY
+  GuiControlGet, TFont
+  GuiControlGet, CSizeX
+  GuiControlGet, CSizeY
+  GuiControlGet, TAlpha
+  GuiControlGet, TAlwaysOnTop
+  GuiControlGet, OLeft
+  GuiControlGet, OTop
+  GuiControlGet, OBottom
+  GuiControlGet, ORight
+  GuiControlGet, TForeground
+  GuiControlGet, TBackground
+  GuiControlGet, TSlideTime
+  GuiControlGet, TSlideTau
+  GuiControlGet, WinKey
+  GuiControlGet, SSHowHide
+  GuiControlGet, TShell
+  GuiControlGet, THistory
+  GuiControlGet, EPath
+  GuiControlGet, NConfigMintty
+  GuiControlGet, SaveIniFile
+  ;; remove the gui
+  Gui, Destroy
+
+  ;; enable detection of hidden window
+  DetectHiddenWindows, on
+
+  ;; get the console window id (-1 if nothing found)
+  TerminalHWND := TerminalWindowExist()
+
+  ;; if a console is launched
+  if TerminalHWND != -1
+  {
+    ;; hide the console if already launch
+    IfWinExist, ahk_id %TerminalHWND%
+    {
+      WindowSlideUp(TerminalHWND)
+    }
+  }
+  ;; set global variables
+  TerminalFont   = %TFont%
+  CharacterSizeX := CSizeX
+  CharacterSizeY := CSizeY
+  TerminalAlpha  := TAlpha
+  if TAlwaysOnTop = 1
+  {
+    TerminalAlwaysOnTop = True
+  }
+  else
+  {
+     TerminalAlwaysOnTop = False
+  }
+  OffsetLeft         := OLeft
+  OffsetTop          := OTop
+  OffsetBottom       := OBottom
+  OffsetRight        := ORight
+  TerminalForeground = %TForeground%
+  TerminalBackground = %TBackground%
+  TerminalSlideTime  := TSlideTime
+  TerminalSlideTau   := TSlideTau
+  TerminalShell      = %TShell%
+  TerminalHistory    := THistory
+  ExecPath           = %EPath%
+  if NConfigMintty = 1
+  {
+    NoConfigMintty = True
+  }
+  else
+  {
+    NoConfigMintty = False
+  }
+
+  ;; when some settings are changed the console must be restart
+  if (TType != TerminalType or TTitle != TerminalTitle or NumSizePercentX != SizePercentX or NumSizePercentY != SizePercentY)
+  {
+    if TerminalHWND != -1
+    {
+      ;; remove window decoration and apply alpha and always on top
+      WindowDesign(TerminalHWND)
+      ;; show the console window to allow the user to close the console
+      WindowSlideDown(TerminalHWND)
+      MsgBox, 0x30, %ApplicationName%: console setting modified, The console have to be stopped (or it will be kill).
+      ;; kill the console if not closed
+      IfWinExist, ahk_id %TerminalHWND%
+      {
+        WinClose, ahk_id %TerminalHWND%
+      }
+    }
+
+    ;; set gloabl variables
+    TerminalType  = %TType%
+    TerminalTitle = %TTitle%
+    SizePercentX  := NumSizePercentX
+    SizePercentY  := NumSizePercentY
+
+    ;; launch console with new settings
+    GoSub, ShowHide
+  }
+  else
+  {
+    ;; if a console is launched
+    if TerminalHWND != -1
+    {
+      ;; hide the console if already launch
+      IfWinExist, ahk_id %TerminalHWND%
+      {
+        ;; remove window decoration and apply alpha and always on top
+        WindowDesign(TerminalHWND)
+        ;; show the window by the top
+        WindowSlideDown(TerminalHWND)
+      }
+    }
+  }
+
+  ;; get new shortcut and set it
+  SetShortcut(SSHowHide, WinKey)
+
+  if SaveIniFile = 1
+  {
+    GoSub, MenuCreateSaveIni
+  }
+Return
+
+;;
+;;; set new shortcut
+SetShortcut(Key, WindowKey)
+{
+  global ShortcutShowHide, ApplicationName
+
+  ;; when the checkbox window key is checked
+  if WindowKey = 1
+  {
+    ;; prefix shortcut with #
+    Key = % "#" Key
+  }
+  ;; unset previous shortcut
+  HotKey, %ShortcutShowHide%, , Off
+  ;; when key already exist
+  HotKey, %Key%, , UseErrorLevel
+  if ErrorLevel = 0
+  {
+    ;; enable new shortcut
+    HotKey, %Key%, , On
+  }
+  else
+  {
+    ;; when it is not a nonexistent hotkey in the current script
+    If ErrorLevel != 5
+    {
+      MsgBox, 0x10, %ApplicationName%: error, Error: Wrong shortcuts
+    }
+    else
+    {
+      ;; the shortcut do not already exist in the current script
+    }
+  }
+  ;; set new shortcut
+  HotKey, %Key%, ShowHide
+  ;; set new shortcut and write in ini file
+  ShortcutShowHide = %Key%
+}
+Return
+
+LoadIniFile:
+  ;; offset to remove window decoration at left
+  IniRead, OffsetLeft,   %IniFile%, Position, OffsetLeft, 6
+  ;; offset to remove window decoration at right
+  IniRead, OffsetRight,  %IniFile%, Position, OffsetRight, 6
+  ;; offset to remove window decoration at top
+  IniRead, OffsetTop,    %IniFile%, Position, OffsetTop, 25
+  ;; offset to remove window decoration at bottom
+  IniRead, OffsetBottom, %IniFile%, Position, OffsetBottom, 6
+  ;;
+  ;; percent size in X for the terminal window (%)
+  IniRead, SizePercentX, %IniFile%, Size, SizePercentX, 100
+  ;; percent size in Y for the terminal window (%)
+  IniRead, SizePercentY, %IniFile%, Size, SizePercentY, 30
+  ;;
+  ;; font in terminal Cygwin/rxvt
+  IniRead, TerminalFont,   %IniFile%, Font, TerminalFont, Courier-12
+  ;; Character Size in X
+  IniRead, CharacterSizeX, %IniFile%, Font, CharacterSizeX, 8
+  ;; Character Size in Y
+  IniRead, CharacterSizeY, %IniFile%, Font, CharacterSizeY, 13
+  ;;
+  ;; type of terminal MS/cmd or Cygwin/rxvt
+  IniRead, TerminalType,  %IniFile%, Terminal, TerminalType, cmd
+  ;; title in terminal MS/cmd Cygwin/rxvt
+  IniRead, TerminalTitle, %IniFile%, Terminal, TerminalTitle, QuahkeConsole
+  ;;
+  ;; Transparence of terminal in percent (invisible (0) to full opaque (100))
+  IniRead, TerminalAlpha,       %IniFile%, Display, TerminalAlpha, 80
+  ;; foreground color in terminal Cygwin/rxvt
+  IniRead, TerminalForeground,  %IniFile%, Display, TerminalForeground, white
+  ;; background color in terminal Cygwin/rxvt
+  IniRead, TerminalBackground,  %IniFile%, Display, TerminalBackground, black
+  ;; time in ms of animation of hide/show console window
+  IniRead, TerminalSlideTime,   %IniFile%, Display, TerminalSlideTime, 250
+  ;; time in ms of going to position in animation (Tau~63%, 3Tau~95%, 5Tau~99%)
+  IniRead, TerminalSlideTau,    %IniFile%, Display, TerminalSlideTau, 70
+  ;; always on top
+  IniRead, TerminalAlwaysOnTop, %IniFile%, Display, TerminalAlwaysOnTop, True
+  ;;
+  ;; shell in terminal Cygwin/rxvt
+  IniRead, TerminalShell,   %IniFile%, Misc, TerminalShell, bash
+  ;; history size in terminal Cygwin/rxvt
+  IniRead, TerminalHistory, %IniFile%, Misc, TerminalHistory, 5000
+  ;; path of Cygwin (to run rxvt)
+  IniRead, ExecPath,        %IniFile%, Misc, ExecPath, C:\cygwin\bin
+  ;; take default config from you config file (~/.minttyrc)
+  IniRead, NoConfigMintty,  %IniFile%, Misc, NoConfigMintty, False
+  ;; shortcut for show/hide window console
+  IniRead, ShortcutShowHide,  %IniFile%, Misc, ShortcutShowHide, F1
+Return
+
 ;;
 ;;; Edit a ini file
 MenuEditIni:
   ;; Launch default editor maximized.
-  Run, QuahkeConsole.ini, , Max UseErrorLevel
+  Run, %IniFile%, , Max UseErrorLevel
   ;; when error to launch
   if ErrorLevel = ERROR
-    MsgBox, 0x10, QuahkeConsole, cannot access QuahkeConsole.ini: No such file or directory.`n(Use before "Create/Save .ini file")
+    MsgBox, 0x10, %ApplicationName%, cannot access %IniFile%: No such file or directory.`n(Use before "Create/Save .ini file")
 Return
 
 ;;
 ;;; Save all settings in a ini file
 MenuCreateSaveIni:
   ;; Section Position
-  IniWrite, %OffsetLeft%,   QuahkeConsole.ini, Position, OffsetLeft
-  IniWrite, %OffsetRight%,  QuahkeConsole.ini, Position, OffsetRight
-  IniWrite, %OffsetTop%,    QuahkeConsole.ini, Position, OffsetTop
-  IniWrite, %OffsetBottom%, QuahkeConsole.ini, Position, OffsetBottom
+  IniWrite, %OffsetLeft%,   %IniFile%, Position, OffsetLeft
+  IniWrite, %OffsetRight%,  %IniFile%, Position, OffsetRight
+  IniWrite, %OffsetTop%,    %IniFile%, Position, OffsetTop
+  IniWrite, %OffsetBottom%, %IniFile%, Position, OffsetBottom
   ;; Section Size
-  IniWrite, %SizePercentX%, QuahkeConsole.ini, Size, SizePercentX
-  IniWrite, %SizePercentY%, QuahkeConsole.ini, Size, SizePercentY
+  IniWrite, %SizePercentX%, %IniFile%, Size, SizePercentX
+  IniWrite, %SizePercentY%, %IniFile%, Size, SizePercentY
   ;; Section Font
-  IniWrite, %TerminalFont%,   QuahkeConsole.ini, Font, TerminalFont
-  IniWrite, %CharacterSizeX%, QuahkeConsole.ini, Font, CharacterSizeX
-  IniWrite, %CharacterSizeY%, QuahkeConsole.ini, Font, CharacterSizeY
+  IniWrite, %TerminalFont%,   %IniFile%, Font, TerminalFont
+  IniWrite, %CharacterSizeX%, %IniFile%, Font, CharacterSizeX
+  IniWrite, %CharacterSizeY%, %IniFile%, Font, CharacterSizeY
   ;; Section Terminal
-  IniWrite, %TerminalType%,  QuahkeConsole.ini, Terminal, TerminalType
-  IniWrite, %TerminalTitle%, QuahkeConsole.ini, Terminal, TerminalTitle
+  IniWrite, %TerminalType%,  %IniFile%, Terminal, TerminalType
+  IniWrite, %TerminalTitle%, %IniFile%, Terminal, TerminalTitle
   ;; Section Display
-  IniWrite, %TerminalAlpha%,       QuahkeConsole.ini, Display, TerminalAlpha
-  IniWrite, %TerminalForeground%,  QuahkeConsole.ini, Display, TerminalForeground
-  IniWrite, %TerminalBackground%,  QuahkeConsole.ini, Display, TerminalBackground
-  IniWrite, %TerminalSlideTime%,   QuahkeConsole.ini, Display, TerminalSlideTime
-  IniWrite, %TerminalSlideTau%,    QuahkeConsole.ini, Display, TerminalSlideTau
-  IniWrite, %TerminalAlwaysOnTop%, QuahkeConsole.ini, Display, TerminalAlwaysOnTop
+  IniWrite, %TerminalAlpha%,       %IniFile%, Display, TerminalAlpha
+  IniWrite, %TerminalForeground%,  %IniFile%, Display, TerminalForeground
+  IniWrite, %TerminalBackground%,  %IniFile%, Display, TerminalBackground
+  IniWrite, %TerminalSlideTime%,   %IniFile%, Display, TerminalSlideTime
+  IniWrite, %TerminalSlideTau%,    %IniFile%, Display, TerminalSlideTau
+  IniWrite, %TerminalAlwaysOnTop%, %IniFile%, Display, TerminalAlwaysOnTop
   ;; Section Misc
-  IniWrite, %TerminalShell%,    QuahkeConsole.ini, Misc, TerminalShell
-  IniWrite, %TerminalHistory%,  QuahkeConsole.ini, Misc, TerminalHistory
-  IniWrite, %ExecPath%,         QuahkeConsole.ini, Misc, ExecPath
-  IniWrite, %NoConfigMintty%,   QuahkeConsole.ini, Misc, NoConfigMintty
-  IniWrite, %ShortcutShowHide%, QuahkeConsole.ini, Misc, ShortcutShowHide
+  IniWrite, %TerminalShell%,    %IniFile%, Misc, TerminalShell
+  IniWrite, %TerminalHistory%,  %IniFile%, Misc, TerminalHistory
+  IniWrite, %ExecPath%,         %IniFile%, Misc, ExecPath
+  IniWrite, %NoConfigMintty%,   %IniFile%, Misc, NoConfigMintty
+  IniWrite, %ShortcutShowHide%, %IniFile%, Misc, ShortcutShowHide
   ;;
   ;; display a traytip to indicate file save
-  TrayTip, QuahkeConsole, QuahkeConsole.ini file saved., 5, 1
+  TrayTip, %ApplicationName%, %IniFile% file saved., 5, 1
 Return

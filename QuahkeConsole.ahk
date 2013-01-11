@@ -236,8 +236,6 @@ ShowHide:
   }
   else
   {
-    PrevActive := WinActive()
-    ;;
     ;; number of line and column in chosen font (CharacterSizeY + 1 to consider the space between line)
     NbCharacterX := Ceil((SizePercentX * ScreenSizeX) / (100 * CharacterSizeX))
     NbCharacterY := Ceil((SizePercentY * ScreenSizeY) / (100 * (CharacterSizeY + 1)))
@@ -619,98 +617,153 @@ Return
 ;;; handler for the item options
 MenuOptions:
   ;; CONSOLE
+  ;; frame with title "Console"
   Gui, Options_:Add, GroupBox, x8 y3 w550 h45, Console
-  ;;
+  ;; display rigth type in list || after mean selected
   if TerminalType = cmd
     OptionsType = cmd||rxvt|mintty
   else if TerminalType = rxvt
     OptionsType = cmd|rxvt||mintty
   else if TerminalType = mintty
     OptionsType = cmd|rxvt|mintty||
+  ;; add label at 15x15 pixels margin previous frame "Console"
   Gui, Options_:Add, Text, xp+15 yp+15 Section, Type (*):
+  ;; add list in a new column
   Gui, Options_:Add, DropDownList, ys w70 gOptions_SetDefaultOffset vTType, %OptionsType%
+  ;; add label in a new column
   Gui, Options_:Add, Text, ys, Title (*):
+  ;; add edit in a new column
   Gui, Options_:Add, Edit, ys w350 vTTitle, %TerminalTitle%
 
   ;; SIZE
+  ;; frame with title "Size"
   Gui, Options_:Add, GroupBox, x8 w550 h70, Size
-  ;;
+  ;; label at 15x15 pixels margin previous frame "Size"
   Gui, Options_:Add, Text, xp+15 yp+15 w63 Section, Horizontal (*):
+  ;; slider in a new column from 1 to 100 (at each modification it calls Options_SetNumSizePercentX)
   Gui, Options_:Add, Slider, ys w400 h20 Range1-100 TickInterval25 AltSubmit gOptions_SetNumSizePercentX vSlideSizePercentX, %SizePercentX%
+  ;; edit in a new column (at each modification it calls Options_SetEditSlideSizePercentX)
   Gui, Options_:Add, Edit, ys xp+402 w40 gOptions_SetEditSlideSizePercentX vNumEditSizePercentX, %SizePercentX%
+  ;; updown (arrows) associated with the previous edit (at each modification it calls Options_SetSlideSizePercentX)
   Gui, Options_:Add, UpDown, Range1-100 gOptions_SetSlideSizePercentX vNumSizePercentX, %SizePercentX%
+  ;; label in a new column (xp+42 place it at 42 pixels from left of previous edit (width 40 + 2))
   Gui, Options_:Add, Text, ys xp+42, `%
   ;;
+  ;; label in a new row
   Gui, Options_:Add, Text, xs w63 Section, Vertical (*):
+  ;; slider from 1 to 100 (at each modification it call Options_SetNumSizePercentY)
   Gui, Options_:Add, Slider, ys w400 h20 Range1-100 TickInterval25 AltSubmit gOptions_SetNumSizePercentY vSlideSizePercentY, %SizePercentY%
+  ;; edit in a new column (at each modification it calls Options_SetEditSlideSizePercentY)
   Gui, Options_:Add, Edit, ys xp+402 w40 gOptions_SetEditSlideSizePercentY vNumEditSizePercentY, %SizePercentY%
+  ;; updown (arrows) associated with the previous edit (at each modification it calls Options_SetSlideSizePercentY)
   Gui, Options_:Add, UpDown, Range1-100 gOptions_SetSlideSizePercentY vNumSizePercentY, %SizePercentY%
+  ;; label in a new column (xp+42 place it at 42 pixels from left of previous edit (width 40 + 2))
   Gui, Options_:Add, Text, ys xp+42, `%
 
   ;; FONTS
+  ;; frame with title "Fonts"
   Gui, Options_:Add, GroupBox, x8 w550 h70, Fonts
-  ;;
+  ;; label at 15x15 pixels margin previous frame "Fonts"
   Gui, Options_:Add, Text, xp+15 yp+15 w105 Section, Font (not cmd) (*):
+  ;; edit in a new column
   Gui, Options_:Add, Edit, ys w411 vTFont, %TerminalFont%
+  ;;
+  ;; label in a new row
   Gui, Options_:Add, Text, xs w105 Section, Character:    Width (*):
+  ;; edit in a new column
   Gui, Options_:Add, Edit, ys w40, %CharacterSizeX%
+  ;; updown (arrows) associated with the previous edit
   Gui, Options_:Add, UpDown, Range1-100 vCSizeX, %CharacterSizeX%
+  ;; label in a new column (xp+42 place it at 42 pixels from left of previous edit (width 40 + 2))
   Gui, Options_:Add, Text, ys xp+42, pixels              Height (*):
+  ;; edit in a new column
   Gui, Options_:Add, Edit, ys w40, %CharacterSizeY%
+  ;; updown (arrows) associated with the previous edit
   Gui, Options_:Add, UpDown, Range1-100 vCSizeY, %CharacterSizeY%
+  ;; label in a new column (xp+42 place it at 42 pixels from left of previous edit (width 40 + 2))
   Gui, Options_:Add, Text, ys xp+42, pixels
 
   ;; DECORATION
+  ;; frame with title "Decoration"
   Gui, Options_:Add, GroupBox, x8 w550 h70, Decoration
-  ;;
+  ;; label at 15x15 pixels margin previous frame "Decoration"
   Gui, Options_:Add, Text, xp+15 yp+15 Section, Alpha (not cmd) (*):
+  ;; edit in a new column
   Gui, Options_:Add, Edit, ys w40, %TerminalAlpha%
+  ;; updown (arrows) associated with the previous edit
   Gui, Options_:Add, UpDown, Range0-100 vTAlpha, %TerminalAlpha%
+  ;; label in a new column (xp+42 place it at 42 pixels from left of previous edit (width 40 + 2))
   Gui, Options_:Add, Text, ys xp+42, `%
+  ;; checkbox in a new column
   if TerminalAlwaysOnTop = True
     Gui, Options_:Add, CheckBox, ys xp+40 h20 Checked1 vTAlwaysOnTop, Always On Top
   else
     Gui, Options_:Add, CheckBox, ys xp+40 h20 Checked0 vTAlwaysOnTop, Always On Top
   Gui, Options_:Add, Button, w90 xp+150 gOptions_SetDefaultOffset, Default Offset
-
+  ;;
+  ;; label in a new row
   Gui, Options_:Add, Text, xs Section, Offset mask:       left:
+  ;; edit in a new column
   Gui, Options_:Add, Edit, ys w40, %OffsetLeft%
+  ;; updown (arrows) associated with the previous edit
   Gui, Options_:Add, UpDown, Range0-1000 vOLeft, %OffsetLeft%
+  ;; label in a new column
   Gui, Options_:Add, Text, ys xp+42, px       top:
+  ;; edit in a new column
   Gui, Options_:Add, Edit, ys w40, %OffsetTop%
+  ;; updown (arrows) associated with the previous edit
   Gui, Options_:Add, UpDown, Range0-1000 vOTop, %OffsetTop%
+  ;; label in a new column
   Gui, Options_:Add, Text, ys xp+42, px       bottom:
+  ;; edit in a new column
   Gui, Options_:Add, Edit, ys w40, %OffsetBottom%
+  ;; updown (arrows) associated with the previous edit
   Gui, Options_:Add, UpDown, Range0-1000 vOBottom, %OffsetBottom%
+  ;; label in a new column
   Gui, Options_:Add, Text, ys xp+42, px       right:
+  ;; edit in a new column
   Gui, Options_:Add, Edit, ys w40, %OffsetRight%
+  ;; updown (arrows) associated with the previous edit
   Gui, Options_:Add, UpDown, Range0-1000 vORight, %OffsetRight%
+  ;; label in a new column
   Gui, Options_:Add, Text, ys xp+42, px
 
   ;; ANIMATION
+  ;; frame with title "Animation"
   Gui, Options_:Add, GroupBox, x8 w550 h45, Animation
-  ;;
+  ;; label at 15x15 pixels margin previous frame "Animation"
   Gui, Options_:Add, Text, xp+15 yp+15 Section, Animation Duration (ms):
+  ;; edit in a new column
   Gui, Options_:Add, Edit, ys w55, %TerminalSlideTime%
+  ;; updown (arrows) associated with the previous edit
   Gui, Options_:Add, UpDown, Range0-10000 vTSlideTime, %TerminalSlideTime%
+  ;; label in a new column (xp+95 place it at 95 pixels from left of previous edit (width 55 + 40))
   Gui, Options_:Add, Text, ys xp+95, Animation Acceleration (tau): (mostly duration / 5)
+  ;; edit in a new column
   Gui, Options_:Add, Edit, ys w48, %TerminalSlideTau%
+  ;; updown (arrows) associated with the previous edit
   Gui, Options_:Add, UpDown, Range0-2000 vTSlideTau, %TerminalSlideTau%
 
   ;; COLOR
-  Gui, Options_:Add, GroupBox, x8 w550 h45, Color (not cmd)
-  ;;
+  ;; frame with title "Color (not cmd and mintty)"
+  Gui, Options_:Add, GroupBox, x8 w550 h45, Color (not cmd mintty)
+  ;; label at 15x15 pixels margin previous frame "Color (not cmd and mintty)"
   Gui, Options_:Add, Text, xp+15 yp+15 Section, Foreground (*):
+  ;; edit in a new column
   Gui, Options_:Add, Edit, ys w100 vTForeground, %TerminalForeground%
+  ;; label in a new column (xp+140 place it at 140 pixels from left of previous edit (width 100 + 40))
   Gui, Options_:Add, Text, ys xp+140, Background (*):
+  ;; edit in a new column
   Gui, Options_:Add, Edit, ys w105 vTBackground, %TerminalBackground%
 
   ;; SHORTCUT
+  ;; frame with title "Shortcut"
   Gui, Options_:Add, GroupBox, x8 w550 h45, Shortcut
-  ;;
+  ;; checkbox at 15x15 pixels margin previous frame "Shortcut"
   IfInString, ShortcutShowHide, #
   {
     Gui, Options_:Add, CheckBox, xp+15 yp+15 h20 Section Checked1 vWinKey, Windows + ...
+    ;; remove windows keys reference
     StringReplace, myShortcut, ShortcutShowHide, #, , All
   }
   else
@@ -718,29 +771,42 @@ MenuOptions:
     Gui, Options_:Add, CheckBox, xp+15 yp+15 h20 Section Checked0 vWinKey, Windows + ...
     myShortcut = %ShortcutShowHide%
   }
+  ;; edit to capture shortcut in a new column
   Gui, Options_:Add, Hotkey, ys w200 vSShowHide, %myShortcut%
 
   ;; MISC
+  ;; frame with title "Misc (not cmd)"
   Gui, Options_:Add, GroupBox, x8 w550 h70, Misc (not cmd)
-  ;;
+  ;; label at 15x15 pixels margin previous frame "Misc (not cmd)"
   Gui, Options_:Add, Text, xp+15 yp+15 Section, Shell (*):
+  ;; edit in a new column
   Gui, Options_:Add, Edit, ys w100 vTShell, %TerminalShell%
+  ;; label in a new column (xp+140 place it at 140 pixels from left of previous edit (width 100 + 40))
   Gui, Options_:Add, Text, ys xp+140, History (*):
+  ;; edit in a new column
   Gui, Options_:Add, Edit, ys w65, %TerminalHistory%
+  ;; updown (arrows) associated with the previous edit
   Gui, Options_:Add, UpDown, Range0-100000 vTHistory, %TerminalHistory%
+  ;; checkbox in a new column (xp+105 place it at 105 pixels from left of previous edit (width 65 + 40))
   if NoConfigMintty = True
     Gui, Options_:Add, CheckBox, ys xp+105 h20 Checked1 vNConfigMintty, Use .minttyrc (*)
   else
     Gui, Options_:Add, CheckBox, ys xp+105 h20 Checked0 vNConfigMintty, Use .minttyrc (*)
+  ;; label in a new row
   Gui, Options_:Add, Text, xs Section, Cygwin bin path (*):
+  ;; edit in a new column
   Gui, Options_:Add, Edit, ys w425 vEPath, %ExecPath%
 
   ;; TEXT
+  ;; label centered in a new row
   Gui, Options_:Add, Text, x8 w550 Center, (*) need to quit the console before modified.
 
   ;; BUTTON
+  ;; OK button (default) (center with the Cancel button Width (550 - 70 - 10 - 70) / 2 = 200)
   Gui, Options_:Add, Button, w70 x200 Section Default, OK
+  ;; Cancel button in a new column (gap of 10 pixels between the button)
   Gui, Options_:Add, Button, w70 ys, Cancel
+  ;; checkbox in a new column (xp+90 place it at 90 pixels from left of previous edit (width 70 + 20))
   Gui, Options_:Add, CheckBox, ys xp+90 Checked1 vSaveIniFile, Save settings
 
   ;; display the gui
@@ -781,15 +847,11 @@ Options_SetDefaultOffset:
   GuiControlGet, TType
   ;; get default offset value
   OffsetArray := DefaultOffset(TType)
-  DefaultOffsetLeft   := OffsetArray[1] ; left
-  DefaultOffsetTop    := OffsetArray[2] ; top
-  DefaultOffsetBottom := OffsetArray[3] ; bottom
-  DefaultOffsetRight  := OffsetArray[4] ; right
   ;; set gui with these value
-  GuiControl, Text, Edit8,  %DefaultOffsetLeft%
-  GuiControl, Text, Edit9,  %DefaultOffsetTop%
-  GuiControl, Text, Edit10, %DefaultOffsetBottom%
-  GuiControl, Text, Edit11, %DefaultOffsetRight%
+  GuiControl, Text, Edit8,  % OffsetArray[1] ; left
+  GuiControl, Text, Edit9,  % OffsetArray[2] ; top
+  GuiControl, Text, Edit10, % OffsetArray[3] ; bottom
+  GuiControl, Text, Edit11, % OffsetArray[4] ; right
 Return
 ;;
 ;;: handler for the set shortcut window
@@ -1069,18 +1131,14 @@ LoadIniFile:
   ;;
   ;; get default offset value
   OffsetArray := DefaultOffset(TerminalType)
-  DefaultOffsetLeft   := OffsetArray[1] ; left
-  DefaultOffsetTop    := OffsetArray[2] ; top
-  DefaultOffsetBottom := OffsetArray[3] ; bottom
-  DefaultOffsetRight  := OffsetArray[4] ; right
   ;; offset to remove window decoration at left
-  IniRead, OffsetLeft,   %IniFile%, Position, OffsetLeft, %DefaultOffsetLeft%
+  IniRead, OffsetLeft,   %IniFile%, Position, OffsetLeft, % OffsetArray[1]
   ;; offset to remove window decoration at top
-  IniRead, OffsetTop,    %IniFile%, Position, OffsetTop, %DefaultOffsetTop%
+  IniRead, OffsetTop,    %IniFile%, Position, OffsetTop, % OffsetArray[2]
   ;; offset to remove window decoration at bottom
-  IniRead, OffsetBottom, %IniFile%, Position, OffsetBottom, %DefaultOffsetBottom%
+  IniRead, OffsetBottom, %IniFile%, Position, OffsetBottom, % OffsetArray[3]
   ;; offset to remove window decoration at right
-  IniRead, OffsetRight,  %IniFile%, Position, OffsetRight, %DefaultOffsetRight%
+  IniRead, OffsetRight,  %IniFile%, Position, OffsetRight, % OffsetArray[4]
   ;;
   ;; time in ms of animation of hide/show console window
   IniRead, TerminalSlideTime, %IniFile%, Display, TerminalSlideTime, 500

@@ -34,9 +34,9 @@
 ;;  may do not function with bash or other shell which modify the terminal title
 
 ;;; Change Log:
-;; 2013-01-10 (1.4)
+;; 2013-01-11 (1.4)
 ;;     options in ini file can be modified by gui + ini file can be give by a
-;;     parameter
+;;     parameter + set default offset + fix bug when no opened window
 ;; 2013-01-07 (1.3)
 ;;     shortcut can be specified + update gui + fix position when unfocus
 ;; 2012-12-11 (1.2)
@@ -199,14 +199,19 @@ ShowHide:
     {
       ;; to switch to the windows just under the console window
       SendInput !{Esc}
+
+      ;; when no window has taken focus
+      IfWinActive ahk_id %TerminalHWND%
+      {
+        ;; activate the taskbar
+        WinActivate, ahk_class Shell_TrayWnd
+      }
+
       ;; hide the window of console
       WindowSlideUp(TerminalHWND)
     }
     else
     {
-      ;; get the title of the current window
-      PrevActive := WinActive()
-
       ;; do not detect hidden window
       DetectHiddenWindows, off
       ;; when console window is visible
@@ -231,12 +236,11 @@ ShowHide:
   }
   else
   {
-    ;; get the id of the current window
     PrevActive := WinActive()
     ;;
-    ;; number of line and column in chosen font
+    ;; number of line and column in chosen font (CharacterSizeY + 1 to consider the space between line)
     NbCharacterX := Ceil((SizePercentX * ScreenSizeX) / (100 * CharacterSizeX))
-    NbCharacterY := Ceil((SizePercentY * ScreenSizeY) / (100 * CharacterSizeY))
+    NbCharacterY := Ceil((SizePercentY * ScreenSizeY) / (100 * (CharacterSizeY + 1)))
 
     ;;;;;;;;;;;;;;;;;;;;;
     ;; CMD
@@ -624,7 +628,7 @@ MenuOptions:
   else if TerminalType = mintty
     OptionsType = cmd|rxvt|mintty||
   Gui, Options_:Add, Text, xp+15 yp+15 Section, Type (*):
-  Gui, Options_:Add, DropDownList, ys w70 vTType, %OptionsType%
+  Gui, Options_:Add, DropDownList, ys w70 gOptions_SetDefaultOffset vTType, %OptionsType%
   Gui, Options_:Add, Text, ys, Title (*):
   Gui, Options_:Add, Edit, ys w350 vTTitle, %TerminalTitle%
 
@@ -632,15 +636,15 @@ MenuOptions:
   Gui, Options_:Add, GroupBox, x8 w550 h70, Size
   ;;
   Gui, Options_:Add, Text, xp+15 yp+15 w63 Section, Horizontal (*):
-  Gui, Options_:Add, Slider, ys w400 h20 Range1-100 TickInterval25 AltSubmit gSetNumSizePercentX vSlideSizePercentX, %SizePercentX%
-  Gui, Options_:Add, Edit, ys xp+402 w40 gSetEditSlideSizePercentX vNumEditSizePercentX, %SizePercentX%
-  Gui, Options_:Add, UpDown, Range1-100 gSetSlideSizePercentX vNumSizePercentX, %SizePercentX%
+  Gui, Options_:Add, Slider, ys w400 h20 Range1-100 TickInterval25 AltSubmit gOptions_SetNumSizePercentX vSlideSizePercentX, %SizePercentX%
+  Gui, Options_:Add, Edit, ys xp+402 w40 gOptions_SetEditSlideSizePercentX vNumEditSizePercentX, %SizePercentX%
+  Gui, Options_:Add, UpDown, Range1-100 gOptions_SetSlideSizePercentX vNumSizePercentX, %SizePercentX%
   Gui, Options_:Add, Text, ys xp+42, `%
   ;;
   Gui, Options_:Add, Text, xs w63 Section, Vertical (*):
-  Gui, Options_:Add, Slider, ys w400 h20 Range1-100 TickInterval25 AltSubmit gSetNumSizePercentY vSlideSizePercentY, %SizePercentY%
-  Gui, Options_:Add, Edit, ys xp+402 w40 gSetEditSlideSizePercentY vNumEditSizePercentY, %SizePercentY%
-  Gui, Options_:Add, UpDown, Range1-100 gSetSlideSizePercentY vNumSizePercentY, %SizePercentY%
+  Gui, Options_:Add, Slider, ys w400 h20 Range1-100 TickInterval25 AltSubmit gOptions_SetNumSizePercentY vSlideSizePercentY, %SizePercentY%
+  Gui, Options_:Add, Edit, ys xp+402 w40 gOptions_SetEditSlideSizePercentY vNumEditSizePercentY, %SizePercentY%
+  Gui, Options_:Add, UpDown, Range1-100 gOptions_SetSlideSizePercentY vNumSizePercentY, %SizePercentY%
   Gui, Options_:Add, Text, ys xp+42, `%
 
   ;; FONTS
@@ -667,6 +671,8 @@ MenuOptions:
     Gui, Options_:Add, CheckBox, ys xp+40 h20 Checked1 vTAlwaysOnTop, Always On Top
   else
     Gui, Options_:Add, CheckBox, ys xp+40 h20 Checked0 vTAlwaysOnTop, Always On Top
+  Gui, Options_:Add, Button, w90 xp+150 gOptions_SetDefaultOffset, Default Offset
+
   Gui, Options_:Add, Text, xs Section, Offset mask:       left:
   Gui, Options_:Add, Edit, ys w40, %OffsetLeft%
   Gui, Options_:Add, UpDown, Range0-1000 vOLeft, %OffsetLeft%
@@ -742,25 +748,48 @@ MenuOptions:
 Return
 ;;
 ;;; handler for slider and updown size
-SetNumSizePercentX:
+Options_SetNumSizePercentX:
+  ;; set size percent of edit from slider
   GuiControl, Text, Edit2, %SlideSizePercentX%
 Return
-SetNumSizePercentY:
+Options_SetNumSizePercentY:
+  ;; set size percent of edit from slider
   GuiControl, Text, Edit3, %SlideSizePercentY%
 Return
-SetSlideSizePercentX:
+Options_SetSlideSizePercentX:
+  ;; set size percent of slider from updown
   GuiControl, , msctls_trackbar321, %NumSizePercentX%
 Return
-SetEditSlideSizePercentX:
+Options_SetEditSlideSizePercentX:
+  ;; set size percent of slider from edit
   GuiControlGet, NumEditSizePercentX
   GuiControl, , msctls_trackbar321, %NumEditSizePercentX%
 Return
-SetSlideSizePercentY:
+Options_SetSlideSizePercentY:
+  ;; set size percent of slider from updown
   GuiControl, , msctls_trackbar322, %NumSizePercentY%
 Return
-SetEditSlideSizePercentY:
+Options_SetEditSlideSizePercentY:
+  ;; set size percent of slider from edit
   GuiControlGet, NumEditSizePercentY
   GuiControl, , msctls_trackbar322, %NumEditSizePercentY%
+Return
+;;
+;;; set the default offset
+Options_SetDefaultOffset:
+  ;; get console type
+  GuiControlGet, TType
+  ;; get default offset value
+  OffsetArray := DefaultOffset(TType)
+  DefaultOffsetLeft   := OffsetArray[1] ; left
+  DefaultOffsetTop    := OffsetArray[2] ; top
+  DefaultOffsetBottom := OffsetArray[3] ; bottom
+  DefaultOffsetRight  := OffsetArray[4] ; right
+  ;; set gui with these value
+  GuiControl, Text, Edit8,  %DefaultOffsetLeft%
+  GuiControl, Text, Edit9,  %DefaultOffsetTop%
+  GuiControl, Text, Edit10, %DefaultOffsetBottom%
+  GuiControl, Text, Edit11, %DefaultOffsetRight%
 Return
 ;;
 ;;: handler for the set shortcut window
@@ -817,7 +846,7 @@ Options_ButtonOK:
     }
   }
   ;; set global variables
-  TerminalFont   = %TFont%
+  TerminalFont    = %TFont%
   CharacterSizeX := CSizeX
   CharacterSizeY := CSizeY
   TerminalAlpha  := TAlpha
@@ -833,13 +862,13 @@ Options_ButtonOK:
   OffsetTop          := OTop
   OffsetBottom       := OBottom
   OffsetRight        := ORight
-  TerminalForeground = %TForeground%
-  TerminalBackground = %TBackground%
+  TerminalForeground  = %TForeground%
+  TerminalBackground  = %TBackground%
   TerminalSlideTime  := TSlideTime
   TerminalSlideTau   := TSlideTau
-  TerminalShell      = %TShell%
+  TerminalShell       = %TShell%
   TerminalHistory    := THistory
-  ExecPath           = %EPath%
+  ExecPath            = %EPath%
   if NConfigMintty = 1
   {
     NoConfigMintty = True
@@ -850,7 +879,7 @@ Options_ButtonOK:
   }
 
   ;; when some settings are changed the console must be restart
-  if (TType != TerminalType or TTitle != TerminalTitle or NumSizePercentX != SizePercentX or NumSizePercentY != SizePercentY)
+  if (TType != TerminalType or TTitle != TerminalTitle or NumSizePercentX != SizePercentX or NumSizePercentY != SizePercentY or TFont != TerminalFont or CSizeX != CharacterSizeX or CSizeY != CharacterSizeY or (TType = "rxvt" and TForeground != TerminalForeground) or (TType = "rxvt" and TBackground != TerminalBackground) or (TType = "rxvt" and TShell != TerminalShell) or (TType = "rxvt" and THistory != TerminalHistory))
   {
     if TerminalHWND != -1
     {
@@ -892,7 +921,7 @@ Options_ButtonOK:
   }
 
   ;; get new shortcut and set it
-  SetShortcut(SSHowHide, WinKey)
+  Options_SetShortcut(SSHowHide, WinKey)
 
   if SaveIniFile = 1
   {
@@ -902,7 +931,7 @@ Return
 
 ;;
 ;;; set new shortcut
-SetShortcut(Key, WindowKey)
+Options_SetShortcut(Key, WindowKey)
 {
   global ShortcutShowHide, ApplicationName
 
@@ -940,15 +969,86 @@ SetShortcut(Key, WindowKey)
 }
 Return
 
+;;
+;;; determine the default value for offset
+DefaultOffset(TType)
+{
+  ;; init variable
+  AeroIsEnabled := 0
+  ;; aero is enabled ?
+  Aero := DllCall("Dwmapi\DwmIsCompositionEnabled", "Int*", AeroIsEnabled)
+  ;; when dllcall success
+  if (Aero == 0)
+  {
+    ;; Win 7 or Vista (dwmapi is known)
+
+    ;; when aero is enabled
+    if (AeroIsEnabled)
+    {
+      if TType = cmd
+      {
+        DefaultLeft   := 0
+        DefaultTop    := 0
+        DefaultBottom := 42
+        DefaultRight  := 19
+      }
+      else
+      {
+        ;; rxvt or mintty
+        DefaultLeft   := 0
+        DefaultTop    := 0
+        DefaultBottom := 42
+        DefaultRight  := 19
+      }
+    }
+    else
+    {
+       ;; aero is disabled
+
+      if TType = cmd
+      {
+        DefaultLeft   := 0
+        DefaultTop    := 0
+        DefaultBottom := 40
+        DefaultRight  := 20
+      }
+      {
+        ;; rxvt or mintty
+        DefaultLeft   := 0
+        DefaultTop    := 0
+        DefaultBottom := 0
+        DefaultRight  := 0
+      }
+    }
+  }
+  else
+  {
+    ;; Win XP (Dwmapi is unknown)
+    if TType = cmd
+    {
+      DefaultLeft   := 6
+      DefaultTop    := 25
+      DefaultBottom := 6
+      DefaultRight  := 6
+    }
+    else
+    {
+      ;; rxvt or mintty
+      DefaultLeft   := 0
+      DefaultTop    := 0
+      DefaultBottom := 0
+      DefaultRight  := 0
+    }
+  }
+
+  Return Array(DefaultLeft, DefaultTop, DefaultBottom, DefaultRight)
+}
+
 LoadIniFile:
-  ;; offset to remove window decoration at left
-  IniRead, OffsetLeft,   %IniFile%, Position, OffsetLeft, 6
-  ;; offset to remove window decoration at right
-  IniRead, OffsetRight,  %IniFile%, Position, OffsetRight, 6
-  ;; offset to remove window decoration at top
-  IniRead, OffsetTop,    %IniFile%, Position, OffsetTop, 25
-  ;; offset to remove window decoration at bottom
-  IniRead, OffsetBottom, %IniFile%, Position, OffsetBottom, 6
+  ;; type of terminal MS/cmd or Cygwin/rxvt
+  IniRead, TerminalType,  %IniFile%, Terminal, TerminalType, cmd
+  ;; title in terminal MS/cmd Cygwin/rxvt
+  IniRead, TerminalTitle, %IniFile%, Terminal, TerminalTitle, QuahkeConsole
   ;;
   ;; percent size in X for the terminal window (%)
   IniRead, SizePercentX, %IniFile%, Size, SizePercentX, 100
@@ -960,36 +1060,49 @@ LoadIniFile:
   ;; Character Size in X
   IniRead, CharacterSizeX, %IniFile%, Font, CharacterSizeX, 8
   ;; Character Size in Y
-  IniRead, CharacterSizeY, %IniFile%, Font, CharacterSizeY, 13
-  ;;
-  ;; type of terminal MS/cmd or Cygwin/rxvt
-  IniRead, TerminalType,  %IniFile%, Terminal, TerminalType, cmd
-  ;; title in terminal MS/cmd Cygwin/rxvt
-  IniRead, TerminalTitle, %IniFile%, Terminal, TerminalTitle, QuahkeConsole
+  IniRead, CharacterSizeY, %IniFile%, Font, CharacterSizeY, 12
   ;;
   ;; Transparence of terminal in percent (invisible (0) to full opaque (100))
   IniRead, TerminalAlpha,       %IniFile%, Display, TerminalAlpha, 80
-  ;; foreground color in terminal Cygwin/rxvt
-  IniRead, TerminalForeground,  %IniFile%, Display, TerminalForeground, white
-  ;; background color in terminal Cygwin/rxvt
-  IniRead, TerminalBackground,  %IniFile%, Display, TerminalBackground, black
-  ;; time in ms of animation of hide/show console window
-  IniRead, TerminalSlideTime,   %IniFile%, Display, TerminalSlideTime, 250
-  ;; time in ms of going to position in animation (Tau~63%, 3Tau~95%, 5Tau~99%)
-  IniRead, TerminalSlideTau,    %IniFile%, Display, TerminalSlideTau, 70
   ;; always on top
   IniRead, TerminalAlwaysOnTop, %IniFile%, Display, TerminalAlwaysOnTop, True
+  ;;
+  ;; get default offset value
+  OffsetArray := DefaultOffset(TerminalType)
+  DefaultOffsetLeft   := OffsetArray[1] ; left
+  DefaultOffsetTop    := OffsetArray[2] ; top
+  DefaultOffsetBottom := OffsetArray[3] ; bottom
+  DefaultOffsetRight  := OffsetArray[4] ; right
+  ;; offset to remove window decoration at left
+  IniRead, OffsetLeft,   %IniFile%, Position, OffsetLeft, %DefaultOffsetLeft%
+  ;; offset to remove window decoration at top
+  IniRead, OffsetTop,    %IniFile%, Position, OffsetTop, %DefaultOffsetTop%
+  ;; offset to remove window decoration at bottom
+  IniRead, OffsetBottom, %IniFile%, Position, OffsetBottom, %DefaultOffsetBottom%
+  ;; offset to remove window decoration at right
+  IniRead, OffsetRight,  %IniFile%, Position, OffsetRight, %DefaultOffsetRight%
+  ;;
+  ;; time in ms of animation of hide/show console window
+  IniRead, TerminalSlideTime, %IniFile%, Display, TerminalSlideTime, 500
+  ;; time in ms of going to position in animation (Tau~63%, 3Tau~95%, 5Tau~99%)
+  IniRead, TerminalSlideTau,  %IniFile%, Display, TerminalSlideTau, 80
+  ;;
+  ;; foreground color in terminal Cygwin/rxvt
+  IniRead, TerminalForeground, %IniFile%, Display, TerminalForeground, white
+  ;; background color in terminal Cygwin/rxvt
+  IniRead, TerminalBackground, %IniFile%, Display, TerminalBackground, black
+  ;;
+  ;; shortcut for show/hide window console
+  IniRead, ShortcutShowHide, %IniFile%, Misc, ShortcutShowHide, F1
   ;;
   ;; shell in terminal Cygwin/rxvt
   IniRead, TerminalShell,   %IniFile%, Misc, TerminalShell, bash
   ;; history size in terminal Cygwin/rxvt
   IniRead, TerminalHistory, %IniFile%, Misc, TerminalHistory, 5000
-  ;; path of Cygwin (to run rxvt)
-  IniRead, ExecPath,        %IniFile%, Misc, ExecPath, C:\cygwin\bin
   ;; take default config from you config file (~/.minttyrc)
   IniRead, NoConfigMintty,  %IniFile%, Misc, NoConfigMintty, False
-  ;; shortcut for show/hide window console
-  IniRead, ShortcutShowHide,  %IniFile%, Misc, ShortcutShowHide, F1
+  ;; path of Cygwin (to run rxvt)
+  IniRead, ExecPath,        %IniFile%, Misc, ExecPath, C:\cygwin\bin
 Return
 
 ;;
@@ -1005,11 +1118,9 @@ Return
 ;;
 ;;; Save all settings in a ini file
 MenuCreateSaveIni:
-  ;; Section Position
-  IniWrite, %OffsetLeft%,   %IniFile%, Position, OffsetLeft
-  IniWrite, %OffsetRight%,  %IniFile%, Position, OffsetRight
-  IniWrite, %OffsetTop%,    %IniFile%, Position, OffsetTop
-  IniWrite, %OffsetBottom%, %IniFile%, Position, OffsetBottom
+  ;; Section Terminal
+  IniWrite, %TerminalType%,  %IniFile%, Terminal, TerminalType
+  IniWrite, %TerminalTitle%, %IniFile%, Terminal, TerminalTitle
   ;; Section Size
   IniWrite, %SizePercentX%, %IniFile%, Size, SizePercentX
   IniWrite, %SizePercentY%, %IniFile%, Size, SizePercentY
@@ -1017,22 +1128,25 @@ MenuCreateSaveIni:
   IniWrite, %TerminalFont%,   %IniFile%, Font, TerminalFont
   IniWrite, %CharacterSizeX%, %IniFile%, Font, CharacterSizeX
   IniWrite, %CharacterSizeY%, %IniFile%, Font, CharacterSizeY
-  ;; Section Terminal
-  IniWrite, %TerminalType%,  %IniFile%, Terminal, TerminalType
-  IniWrite, %TerminalTitle%, %IniFile%, Terminal, TerminalTitle
   ;; Section Display
   IniWrite, %TerminalAlpha%,       %IniFile%, Display, TerminalAlpha
-  IniWrite, %TerminalForeground%,  %IniFile%, Display, TerminalForeground
-  IniWrite, %TerminalBackground%,  %IniFile%, Display, TerminalBackground
+  IniWrite, %TerminalAlwaysOnTop%, %IniFile%, Display, TerminalAlwaysOnTop
+  ;; Section Position
+  IniWrite, %OffsetLeft%,   %IniFile%, Position, OffsetLeft
+  IniWrite, %OffsetTop%,    %IniFile%, Position, OffsetTop
+  IniWrite, %OffsetBottom%, %IniFile%, Position, OffsetBottom
+  IniWrite, %OffsetRight%,  %IniFile%, Position, OffsetRight
+  ;; Section Display
   IniWrite, %TerminalSlideTime%,   %IniFile%, Display, TerminalSlideTime
   IniWrite, %TerminalSlideTau%,    %IniFile%, Display, TerminalSlideTau
-  IniWrite, %TerminalAlwaysOnTop%, %IniFile%, Display, TerminalAlwaysOnTop
+  IniWrite, %TerminalForeground%,  %IniFile%, Display, TerminalForeground
+  IniWrite, %TerminalBackground%,  %IniFile%, Display, TerminalBackground
   ;; Section Misc
-  IniWrite, %TerminalShell%,    %IniFile%, Misc, TerminalShell
-  IniWrite, %TerminalHistory%,  %IniFile%, Misc, TerminalHistory
-  IniWrite, %ExecPath%,         %IniFile%, Misc, ExecPath
-  IniWrite, %NoConfigMintty%,   %IniFile%, Misc, NoConfigMintty
-  IniWrite, %ShortcutShowHide%, %IniFile%, Misc, ShortcutShowHide
+  IniWrite, %ShortcutShowHide%,               %IniFile%, Misc, ShortcutShowHide
+  IniWrite, %TerminalShell%,                  %IniFile%, Misc, TerminalShell
+  IniWrite, %TerminalHistory%,                %IniFile%, Misc, TerminalHistory
+  IniWrite, %NoConfigMintty%,                 %IniFile%, Misc, NoConfigMintty
+  IniWrite, %ExecPath%,                       %IniFile%, Misc, ExecPath
   ;;
   ;; display a traytip to indicate file save
   TrayTip, %ApplicationName%, %IniFile% file saved., 5, 1

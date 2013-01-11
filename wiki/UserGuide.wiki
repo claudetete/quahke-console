@@ -26,9 +26,9 @@
  * Of course if you want use rxvt you have to install [http://www.cygwin.com Cygwin] with the package rxvt (example of settings in [UserGuide#rxvt]), same for mintty.
 
 = Configuration =
- * Create the .ini file (default value are for Windows XP, cmd and 8x12 font)
- * Character size require to restart the console, other cosmetic settings can be set on a running console
- * Edit it or use the Options GUI in menu
+ * Create the .ini file (default value are for Windows XP, cmd and 8x12 font) and edit it.
+ OR
+ * Use the Options GUI in menu
 
 === Section Position ===
 || *Name* || *About* || *Default* ||
@@ -46,7 +46,7 @@
 || *Name* || *About* || *Default* ||
 || TerminalFont || Font to be used in the console (only rxvt or mintty) || _Courier-12_ ||
 || CharacterSizeX || Font width used in the console (in pixels) || _8_ ||
-|| CharacterSizeY || Font height used in the console (in pixels) || _13_ ||
+|| CharacterSizeY || Font height used in the console (in pixels) _1 pixels is added about between line_ || _12_ ||
 
 === Section Terminal ===
 || *Name* || *About* || *Default* ||

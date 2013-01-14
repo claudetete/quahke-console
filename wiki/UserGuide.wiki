@@ -139,6 +139,18 @@ NoConfigMintty=False
   Rxvt*color7:       #F1F1F1
   Rxvt*color15:      #FFFFFF
 }}}
+=== Window Title ===
+ * In you shell you do not must change window title (it is use by QuahkeConsole to recognize the console window)
+ * If you want to use bash you can put this in your _.bashrc_
+{{{
+echo -ne "\e]2;QuahkeConsole\a\e]1;\a"
+}}}
+ * If you want to use zsh you can put this in your _.zshrc_
+{{{
+print -Pn "\e]0;QuahkeConsole\a"
+}}}
+ * QuahkeConsole should be *TerminalTitle* value from ini file.
+
 
 = mintty =
-To use your configuration file (~/.minttyrc) set *NoConfigMintty* to *True* in *Misc* section but, the alpha and font setting in QuahkeConsole.ini will be not considered.
+ * To use your configuration file (_.minttyrc_) set *NoConfigMintty* to *True* in *Misc* section but, the alpha and font setting in QuahkeConsole.ini will be not considered.

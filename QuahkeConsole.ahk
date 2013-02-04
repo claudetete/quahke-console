@@ -84,25 +84,6 @@ SendMode Input
 SetWorkingDir %A_ScriptDir%
 ;; only on instance of this script
 #SingleInstance force
-
-;
-;;
-;;; SETTING
-;; version number
-SoftwareVersion = 1.4
-;;
-;; Precision of pixel move for animation of the window
-TimerMovePrecision := 20
-;;
-;; Unique ID of the console window
-TerminalHWND := -1
-;;
-;; screen size
-ScreenSizeX := 0
-ScreenSizeY := 0
-;; Console window position
-PosX := 0
-PosY := 0
 ;; application name use in msgbox, etc
 ApplicationName = QuahkeConsole
 
@@ -134,13 +115,30 @@ else
 
 ;
 ;;
-;;; READ INI FILE
+;;; SETTING
 GoSub, LoadIniFile
+;;
+;; version number
+SoftwareVersion = 1.4
+;;
+;; Precision of pixel move for animation of the window
+TimerMovePrecision := 20
+;;
+;; Unique ID of the console window
+TerminalHWND := -1
+;;
+;; screen size
+ScreenSizeX := 0
+ScreenSizeY := 0
+;; Console window position
+PosX := 0
+PosY := 0
 
 ;
 ;;
 ;;; SHORTCUT
 ;; Launch console if necessary and hide/show
+;; (need to be before menu and icon)
 HotKey, %ShortcutShowHide%, ShowHide
 
 ;
@@ -172,9 +170,6 @@ Menu, tray, add, Create/Save .ini file, MenuCreateSaveIni
 Menu, tray, add
 ;; add the standard menu
 Menu, tray, Standard
-
-
-;; End of script
 Return
 
 ;
@@ -188,10 +183,6 @@ ShowHide:
   ;;
   ;; set match window title anywhere in the title
   SetTitleMatchMode, 3
-  ;;
-  ;; get the size of the current monitor (without taskbar)
-  SysGet, ScreenSizeX, 16 ; not 61 (I think documentation is wrong)
-  SysGet, ScreenSizeY, 17 ; not 62
 
   ;; get the console window id (-1 if nothing found)
   TerminalHWND := TerminalWindowExist()
@@ -241,15 +232,20 @@ ShowHide:
   }
   else
   {
-    ;; number of line and column in chosen font (CharacterSizeY + 1 to consider the space between line)
+    ;; get the size of the current monitor (without taskbar)
+    SysGet, ScreenSizeX, 16 ; not 61
+    SysGet, ScreenSizeY, 17 ; not 62
+    ;;
+    ;; number of line and column in chosen font (CharacterSizeY + 1 pixel to consider the space between line)
     NbCharacterX := Ceil((SizePercentX * ScreenSizeX) / (100 * CharacterSizeX))
-    NbCharacterY := Ceil((SizePercentY * ScreenSizeY) / (100 * (CharacterSizeY + 1)))
+    NbCharacterY := Ceil((SizePercentY * ScreenSizeY) / (100 * CharacterSizeY))
 
     ;;;;;;;;;;;;;;;;;;;;;
     ;; CMD
     ;;;;;;;;;;;;;;;;;;;;;
     if TerminalType = cmd
     {
+      NbCharacterY += 1
       ;; launch cmd
       Run "%A_WinDir%\system32\cmd.exe" /K "title %TerminalTitle% & mode con:cols=%NbCharacterX% lines=%NbCharacterY%", , , WinPID
     }
@@ -324,7 +320,7 @@ Scrollbar=none
     }
 
     ;; wait instance of console window
-    WinWait, ahk_pid %WinPID%
+    WinWaitActive, ahk_pid %WinPID%
     ;;
     Sleep, 250
     ;;
@@ -623,7 +619,7 @@ Return
 MenuOptions:
   ;; CONSOLE
   ;; frame with title "Console"
-  Gui, Options_:Add, GroupBox, x10 y3 w550 h45, Console
+  Gui, Options_:Add, GroupBox, x8 y3 w550 h45, Console
   ;; display rigth type in list || after mean selected
   if TerminalType = cmd
     OptionsType = cmd||rxvt|mintty
@@ -642,7 +638,7 @@ MenuOptions:
 
   ;; SIZE
   ;; frame with title "Size"
-  Gui, Options_:Add, GroupBox, x10 w550 h70, Size
+  Gui, Options_:Add, GroupBox, x8 w550 h70, Size
   ;; label at 15x15 pixels margin previous frame "Size"
   Gui, Options_:Add, Text, xp+15 yp+15 w63 Section, Horizontal (*):
   ;; slider in a new column from 1 to 100 (at each modification it calls Options_SetNumSizePercentX)
@@ -667,7 +663,7 @@ MenuOptions:
 
   ;; FONTS
   ;; frame with title "Fonts"
-  Gui, Options_:Add, GroupBox, x10 w550 h70, Fonts
+  Gui, Options_:Add, GroupBox, x8 w550 h70, Fonts
   ;; label at 15x15 pixels margin previous frame "Fonts"
   Gui, Options_:Add, Text, xp+15 yp+15 w105 Section, Font (not cmd) (*):
   ;; edit in a new column
@@ -690,7 +686,7 @@ MenuOptions:
 
   ;; DECORATION
   ;; frame with title "Decoration"
-  Gui, Options_:Add, GroupBox, x10 w550 h70, Decoration
+  Gui, Options_:Add, GroupBox, x8 w550 h70, Decoration
   ;; label at 15x15 pixels margin previous frame "Decoration"
   Gui, Options_:Add, Text, xp+15 yp+15 Section, Alpha (not cmd) (*):
   ;; edit in a new column
@@ -735,7 +731,7 @@ MenuOptions:
 
   ;; ANIMATION
   ;; frame with title "Animation"
-  Gui, Options_:Add, GroupBox, x10 w550 h45, Animation
+  Gui, Options_:Add, GroupBox, x8 w550 h45, Animation
   ;; label at 15x15 pixels margin previous frame "Animation"
   Gui, Options_:Add, Text, xp+15 yp+15 Section, Animation Duration (ms):
   ;; edit in a new column
@@ -751,7 +747,7 @@ MenuOptions:
 
   ;; COLOR
   ;; frame with title "Color (not cmd and mintty)"
-  Gui, Options_:Add, GroupBox, x10 w550 h45, Color (not cmd mintty)
+  Gui, Options_:Add, GroupBox, x8 w550 h45, Color (not cmd mintty)
   ;; label at 15x15 pixels margin previous frame "Color (not cmd and mintty)"
   Gui, Options_:Add, Text, xp+15 yp+15 Section, Foreground (*):
   ;; edit in a new column
@@ -763,7 +759,7 @@ MenuOptions:
 
   ;; SHORTCUT
   ;; frame with title "Shortcut"
-  Gui, Options_:Add, GroupBox, x10 w550 h45, Shortcut
+  Gui, Options_:Add, GroupBox, x8 w550 h45, Shortcut
   ;; checkbox at 15x15 pixels margin previous frame "Shortcut"
   IfInString, ShortcutShowHide, #
   {
@@ -781,7 +777,7 @@ MenuOptions:
 
   ;; MISC
   ;; frame with title "Misc (not cmd)"
-  Gui, Options_:Add, GroupBox, x10 w550 h70, Misc (not cmd)
+  Gui, Options_:Add, GroupBox, x8 w550 h70, Misc (not cmd)
   ;; label at 15x15 pixels margin previous frame "Misc (not cmd)"
   Gui, Options_:Add, Text, xp+15 yp+15 Section, Shell (*):
   ;; edit in a new column
@@ -804,11 +800,11 @@ MenuOptions:
 
   ;; TEXT
   ;; label centered in a new row
-  Gui, Options_:Add, Text, x10 w550 Center, (*) need to quit the console before modified.
+  Gui, Options_:Add, Text, x8 w550 Center, (*) need to quit the console before modified.
 
   ;; BUTTON
-  ;; OK button (default) (center with the Cancel button Width (10 + 550 - 70 - 10 - 70 + 10) / 2 = 210)
-  Gui, Options_:Add, Button, w70 x210 Section Default, OK
+  ;; OK button (default) (center with the Cancel button Width (550 - 70 - 10 - 70) / 2 = 200)
+  Gui, Options_:Add, Button, w70 x200 Section Default, OK
   ;; Cancel button in a new column (gap of 10 pixels between the button)
   Gui, Options_:Add, Button, w70 ys, Cancel
   ;; checkbox in a new column (xp+90 place it at 90 pixels from left of previous edit (width 70 + 20))
@@ -1111,8 +1107,6 @@ DefaultOffset(TType)
   Return Array(DefaultLeft, DefaultTop, DefaultBottom, DefaultRight)
 }
 
-;;
-;;; load all settings from ini file if they exist otherwise default value
 LoadIniFile:
   ;; type of terminal MS/cmd or Cygwin/rxvt
   IniRead, TerminalType,  %IniFile%, Terminal, TerminalType, cmd

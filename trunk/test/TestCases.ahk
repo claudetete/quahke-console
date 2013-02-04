@@ -140,11 +140,13 @@ RunTestCase(TestText, TWidth, THeight, TTime, TAlpha, TFont)
   ;; when Cancel or No, it will exit the test script
   IfMsgBox, No
   {
-     exit, 1
+    Sleep, 250
+    exit, 1
   }
   IfMsgBox, Cancel
   {
-     exit, 2
+    Sleep, 250
+    exit, 2
   }
 }
 Return
